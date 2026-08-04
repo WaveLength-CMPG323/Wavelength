@@ -60,19 +60,19 @@ The purpose of these challenges is simple: encourage music discovery, spark conv
 
 ---
 
-# ✨ Features
+# Features
 
-- 🎵 Spotify Authentication
-- 🌊 Interactive Ocean Interface
-- 🎧 Community Music Discovery
-- ❤️ Share and Like Songs
-- 👥 Follow Like-Minded Listeners
-- 💬 Private Chat Requests
-- 📨 Real-Time Messaging
-- 👥 Interest-Based Groups
-- 🎯 Weekly Community Challenges
-- ✨ Cosmetic Profile Rewards
-- 🔔 Notifications and Activity Feed
+- 🎵 Spotify authentication
+- 🌊 Interactive ocean interface
+- 🎧 Community music discovery
+- ❤️ Share and like songs
+- 👥 Follow like minded listeners
+- 💬 Private chat requests
+- 📨 Real time messaging
+- 👥 Interest based groups
+- 🎯 Weekly community challenges
+- ✨ Cosmetic profile rewards or Achievements of some sort
+- 🔔 Notifications and activity feed
 
 ---
 
