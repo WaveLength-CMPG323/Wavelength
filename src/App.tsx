@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { UserProfileWireframe } from './components/UserProfileWireframe';
 import { SocialFeedWireframe } from './components/SocialFeedWireframe';
 import { WeeklyChallengesWireframe } from './components/WeeklyChallengesWireframe';
+import { AudioPlayerBar } from './components/AudioPlayerBar';
 import { mockProfile, mockPosts, mockChallenges } from './mockData';
-import { User, Radio, Trophy, Compass, Music, Flame } from 'lucide-react';
+import { User, Radio, Trophy, Compass, Flame } from 'lucide-react';
 
 export default function App() {
   const [activeView, setActiveView] = useState<'feed' | 'profile'>('feed');
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col pb-24">
       {/* Top Header */}
-      <header className="h-16 border-b border-cyan-500/20 bg-[#02182b]/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-50">
+      <header className="h-16 border-b border-cyan-500/20 bg-[#02182b]/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center font-bold text-slate-950">
             W
@@ -26,7 +27,7 @@ export default function App() {
       {/* Main 3-Column Content Hub */}
       <div className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 md:p-6">
         
-        {/* LEFT COLUMN: Persistent Navigation (3 cols) */}
+        {/* LEFT COLUMN: Navigation Sidebar */}
         <aside className="lg:col-span-3 space-y-4">
           <div className="bg-[#04385a]/60 backdrop-blur-md p-4 rounded-2xl border border-cyan-500/20 space-y-2">
             <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider px-3 mb-2">Menu</p>
@@ -67,13 +68,13 @@ export default function App() {
           </div>
         </aside>
 
-        {/* CENTER COLUMN: Main Content Area (6 cols) */}
+        {/* CENTER COLUMN: Central Canvas */}
         <main className="lg:col-span-6 space-y-6">
           {activeView === 'feed' && <SocialFeedWireframe posts={mockPosts} />}
           {activeView === 'profile' && <UserProfileWireframe profile={mockProfile} />}
         </main>
 
-        {/* RIGHT COLUMN: Secondary Panel / Challenges (3 cols) */}
+        {/* RIGHT COLUMN: Challenges Panel */}
         <aside className="lg:col-span-3 space-y-4">
           <div className="bg-[#04385a]/60 backdrop-blur-md p-4 rounded-2xl border border-cyan-500/20">
             <WeeklyChallengesWireframe challenges={mockChallenges} />
@@ -81,6 +82,9 @@ export default function App() {
         </aside>
 
       </div>
+
+      {/* Persistent Audio Player */}
+      <AudioPlayerBar />
     </div>
   );
 }
