@@ -1,4 +1,4 @@
-import { UserProfile, SocialPost, Challenge } from './types';
+import type { UserProfile, SocialPost, Challenge } from './types';
 
 export const mockProfile: UserProfile = {
   id: 'usr-1',

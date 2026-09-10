@@ -1,4 +1,3 @@
-// Profile information for WaveLength users
 export interface UserProfile {
   id: string;
   username: string;
@@ -9,7 +8,6 @@ export interface UserProfile {
   favoriteGenre: string;
 }
 
-// Social feed posts and interactions
 export interface SocialPost {
   id: string;
   userId: string;
@@ -23,7 +21,6 @@ export interface SocialPost {
   timestamp: string;
 }
 
-// Platform challenges and events
 export interface Challenge {
   id: string;
   title: string;
