@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat · Simple CSS Waves</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" id="backBtn" type="button">
+    <svg viewBox="0 0 24 24"><path d="M15.5 4.5L8 12l7.5 7.5 1.4-1.4L10.8 12l6.1-6.1z"/></svg>
+    Home
+  </button>
+  <span class="page-title">Chat</span>
+</div>
+
+<div class="chat-layout">
+  <div class="chat-sidebar">
+    <div class="chat-tabs">
+      <div class="chat-tab active" id="tabFriends">Friends</div>
+      <div class="chat-tab" id="tabGroups">Groups</div>
+    </div>
+    <div id="friendsList"></div>
+    <div id="groupsList" hidden></div>
+    <button class="chat-new-group-btn" id="newGroupBtn" type="button" hidden>+ Create Group</button>
+  </div>
+
+  <div class="chat-main" id="chatMain">
+    <div class="chat-empty">Pick a conversation to get started</div>
+  </div>
+</div>
+
+<!-- Create group panel -->
+<div class="nav-panel-backdrop" id="groupBackdrop"></div>
+<div class="nav-panel" id="groupPanel" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="nav-panel-header">
+    <span class="nav-panel-title">Create Group</span>
+    <button class="nav-panel-close" id="groupPanelClose" type="button" aria-label="Close panel">&times;</button>
+  </div>
+  <div class="nav-panel-body" style="padding:18px 22px; overflow-y:auto; display:flex; flex-direction:column; gap:16px;">
+    <div class="form-field">
+      <label>Group name</label>
+      <input type="text" id="groupNameInput" placeholder="e.g. Late Night Lo-fi">
+    </div>
+    <div class="form-field">
+      <label>Choose an icon</label>
+      <div class="icon-picker" id="iconPicker"></div>
+    </div>
+    <div class="form-field">
+      <label>Add friends</label>
+      <div class="member-picker" id="memberPicker"></div>
+    </div>
+    <button class="panel-primary-btn" id="createGroupBtn" type="button">Create Group</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  var db = CSS_APP.load();
+  var activeType = null; // 'friend' | 'group'
+  var activeId = null;
+
+  document.getElementById('backBtn').addEventListener('click', function () {
+    window.location.href = 'index.html';
+  });
+
+  /* ---------- tabs ---------- */
+  var tabFriends = document.getElementById('tabFriends');
+  var tabGroups = document.getElementById('tabGroups');
+  var friendsList = document.getElementById('friendsList');
+  var groupsList = document.getElementById('groupsList');
+  var newGroupBtn = document.getElementById('newGroupBtn');
+
+  tabFriends.addEventListener('click', function () {
+    tabFriends.classList.add('active');
+    tabGroups.classList.remove('active');
+    friendsList.hidden = false;
+    groupsList.hidden = true;
+    newGroupBtn.hidden = true;
+  });
+  tabGroups.addEventListener('click', function () {
+    tabGroups.classList.add('active');
+    tabFriends.classList.remove('active');
+    friendsList.hidden = true;
+    groupsList.hidden = false;
+    newGroupBtn.hidden = false;
+  });
+
+  /* ---------- friends list ---------- */
+  function friendIds() {
+    return Object.keys(db.users).filter(function (id) { return db.users[id].chatStatus === 'friend'; });
+  }
+
+  function renderFriendsList() {
+    friendsList.innerHTML = '';
+    var ids = friendIds();
+    if (ids.length === 0) {
+      friendsList.innerHTML = '<p style="padding:16px;color:#999;font-size:13px;">No chats yet — accept a request from Notifications.</p>';
+      return;
+    }
+    ids.forEach(function (id) {
+      var user = db.users[id];
+      var item = document.createElement('div');
+      item.className = 'chat-list-item' + (activeType === 'friend' && activeId === id ? ' active' : '');
+      var sub = user.listening ? '🎧 ' + db.songs[user.listening].title : 'Tap to chat';
+      item.innerHTML = '<img src="' + user.pic + '" alt="' + user.name + '">' +
+        '<span class="chat-list-meta"><span class="chat-list-name">' + user.name + '</span><br>' +
+        '<span class="chat-list-sub">' + sub + '</span></span>';
+      item.addEventListener('click', function () { openFriendChat(id); });
+      friendsList.appendChild(item);
+    });
+  }
+
+  /* ---------- groups list ---------- */
+  function renderGroupsList() {
+    groupsList.innerHTML = '';
+    var ids = Object.keys(db.groups);
+    if (ids.length === 0) {
+      groupsList.innerHTML = '<p style="padding:16px;color:#999;font-size:13px;">No groups yet.</p>';
+      return;
+    }
+    ids.forEach(function (id) {
+      var group = db.groups[id];
+      var item = document.createElement('div');
+      item.className = 'chat-list-item' + (activeType === 'group' && activeId === id ? ' active' : '');
+      item.innerHTML = '<img src="' + group.icon + '" alt="' + group.name + '">' +
+        '<span class="chat-list-meta"><span class="chat-list-name">' + group.name + '</span><br>' +
+        '<span class="chat-list-sub">' + group.members.length + ' members</span></span>';
+      item.addEventListener('click', function () { openGroupChat(id); });
+      groupsList.appendChild(item);
+    });
+  }
+
+  /* ---------- open a 1:1 chat ---------- */
+  function openFriendChat(id) {
+    activeType = 'friend';
+    activeId = id;
+    renderFriendsList();
+    var user = db.users[id];
+    var main = document.getElementById('chatMain');
+    var listeningHTML = '';
+    if (user.listening && db.songs[user.listening]) {
+      listeningHTML = '<div class="chat-listening-pill">🎧 Listening to ' + db.songs[user.listening].title +
+        '<button class="chat-join-btn" id="joinListenBtn">Join</button></div>';
+    }
+    main.innerHTML =
+      '<div class="chat-main-header">' +
+        '<div class="chat-main-header-left"><img src="' + user.pic + '" alt="' + user.name + '"><span class="chat-main-header-name">' + user.name + '</span></div>' +
+        listeningHTML +
+        '<button class="chat-header-menu-btn" id="friendMenuBtn" title="Unfriend">⋮</button>' +
+      '</div>' +
+      '<div class="chat-messages" id="chatMessages"></div>' +
+      '<div class="chat-compose"><input type="text" id="chatInput" placeholder="Type a message…"><button id="chatSendBtn">Send</button></div>';
+
+    renderMessages(id);
+
+    if (user.listening) {
+      document.getElementById('joinListenBtn').addEventListener('click', function () {
+        window.location.href = 'index.html?song=' + user.listening;
+      });
+    }
+    document.getElementById('friendMenuBtn').addEventListener('click', function () {
+      if (confirm('Unfriend and delete this chat with ' + user.name + '? This will also unfollow them.')) {
+        user.chatStatus = 'none';
+        user.followedByMe = false;
+        delete db.chats[id];
+        CSS_APP.save(db);
+        activeType = null; activeId = null;
+        main.innerHTML = '<div class="chat-empty">Pick a conversation to get started</div>';
+        renderFriendsList();
+      }
+    });
+    document.getElementById('chatSendBtn').addEventListener('click', function () { sendMessage(id); });
+    document.getElementById('chatInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') sendMessage(id);
+    });
+  }
+
+  function renderMessages(id) {
+    var wrap = document.getElementById('chatMessages');
+    wrap.innerHTML = '';
+    var msgs = db.chats[id] || [];
+    msgs.forEach(function (m) {
+      var bubble = document.createElement('div');
+      bubble.className = 'chat-bubble ' + (m.from === 'me' ? 'me' : 'them');
+      bubble.textContent = m.text;
+      wrap.appendChild(bubble);
+    });
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function sendMessage(id) {
+    var input = document.getElementById('chatInput');
+    var text = input.value.trim();
+    if (!text) return;
+    if (!db.chats[id]) db.chats[id] = [];
+    db.chats[id].push({ from: 'me', text: text, ts: Date.now() });
+    CSS_APP.save(db);
+    input.value = '';
+    renderMessages(id);
+  }
+
+  /* ---------- open a group chat ---------- */
+  function openGroupChat(id) {
+    activeType = 'group';
+    activeId = id;
+    renderGroupsList();
+    var group = db.groups[id];
+    var main = document.getElementById('chatMain');
+    main.innerHTML =
+      '<div class="chat-main-header">' +
+        '<div class="chat-main-header-left"><img src="' + group.icon + '" alt="' + group.name + '"><span class="chat-main-header-name">' + group.name + '</span></div>' +
+        '<button class="chat-header-menu-btn" id="groupMenuBtn" title="Leave group">⋮</button>' +
+      '</div>' +
+      '<div class="chat-messages" id="chatMessages"></div>' +
+      '<div class="chat-compose"><input type="text" id="chatInput" placeholder="Message ' + group.name + '…"><button id="chatSendBtn">Send</button></div>';
+
+    renderMessages(id);
+    document.getElementById('groupMenuBtn').addEventListener('click', function () {
+      if (confirm('Leave and delete "' + group.name + '"?')) {
+        delete db.groups[id];
+        delete db.chats[id];
+        CSS_APP.save(db);
+        activeType = null; activeId = null;
+        main.innerHTML = '<div class="chat-empty">Pick a conversation to get started</div>';
+        renderGroupsList();
+      }
+    });
+    document.getElementById('chatSendBtn').addEventListener('click', function () { sendMessage(id); });
+    document.getElementById('chatInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') sendMessage(id);
+    });
+  }
+
+  /* ---------- create group panel ---------- */
+  var groupPanel = document.getElementById('groupPanel');
+  var groupBackdrop = document.getElementById('groupBackdrop');
+  var predefinedIcons = ['profile1.png', 'profile2.png', 'profile3.png', 'profile4.png'];
+  var selectedIcon = predefinedIcons[0];
+
+  function openGroupPanel() {
+    document.getElementById('groupNameInput').value = '';
+    selectedIcon = predefinedIcons[0];
+
+    var iconPicker = document.getElementById('iconPicker');
+    iconPicker.innerHTML = '';
+    predefinedIcons.forEach(function (icon) {
+      var opt = document.createElement('div');
+      opt.className = 'icon-picker-option' + (icon === selectedIcon ? ' selected' : '');
+      opt.innerHTML = '<img src="' + icon + '" alt="">';
+      opt.addEventListener('click', function () {
+        selectedIcon = icon;
+        iconPicker.querySelectorAll('.icon-picker-option').forEach(function (o) { o.classList.remove('selected'); });
+        opt.classList.add('selected');
+      });
+      iconPicker.appendChild(opt);
+    });
+
+    var memberPicker = document.getElementById('memberPicker');
+    memberPicker.innerHTML = '';
+    var ids = friendIds();
+    if (ids.length === 0) {
+      memberPicker.innerHTML = '<p style="color:#999;font-size:12px;">No friends yet to add.</p>';
+    }
+    ids.forEach(function (id) {
+      var user = db.users[id];
+      var label = document.createElement('label');
+      label.innerHTML = '<input type="checkbox" value="' + id + '"> ' + user.name;
+      memberPicker.appendChild(label);
+    });
+
+    groupPanel.classList.add('open');
+    groupPanel.setAttribute('aria-hidden', 'false');
+    groupBackdrop.classList.add('open');
+  }
+
+  function closeGroupPanel() {
+    groupPanel.classList.remove('open');
+    groupPanel.setAttribute('aria-hidden', 'true');
+    groupBackdrop.classList.remove('open');
+  }
+
+  newGroupBtn.addEventListener('click', openGroupPanel);
+  document.getElementById('groupPanelClose').addEventListener('click', closeGroupPanel);
+  groupBackdrop.addEventListener('click', closeGroupPanel);
+
+  document.getElementById('createGroupBtn').addEventListener('click', function () {
+    var name = document.getElementById('groupNameInput').value.trim();
+    if (!name) { alert('Give your group a name first.'); return; }
+    var checked = Array.prototype.slice.call(document.querySelectorAll('#memberPicker input:checked')).map(function (c) { return c.value; });
+    var id = 'g' + Date.now();
+    db.groups[id] = { id: id, name: name, icon: selectedIcon, members: ['me'].concat(checked) };
+    db.chats[id] = [];
+    CSS_APP.save(db);
+    closeGroupPanel();
+    renderGroupsList();
+    tabGroups.click();
+    openGroupChat(id);
+  });
+
+  /* ---------- keep "currently listening" live ---------- */
+  // Whatever a friend is playing on the wave page should be reflected here
+  // too, so re-check periodically rather than only at the moment the chat
+  // was opened.
+  setInterval(function () {
+    db = CSS_APP.load();
+    renderFriendsList();
+    if (activeType === 'friend' && activeId) updateListeningPill(activeId);
+  }, 4000);
+
+  function updateListeningPill(id) {
+    var header = document.querySelector('.chat-main-header');
+    if (!header) return;
+    var existingPill = header.querySelector('.chat-listening-pill');
+    var user = db.users[id];
+    if (user.listening && db.songs[user.listening]) {
+      var html = '🎧 Listening to ' + db.songs[user.listening].title + '<button class="chat-join-btn" id="joinListenBtn">Join</button>';
+      if (existingPill) {
+        existingPill.innerHTML = html;
+      } else {
+        var pill = document.createElement('div');
+        pill.className = 'chat-listening-pill';
+        pill.innerHTML = html;
+        header.insertBefore(pill, header.lastElementChild);
+      }
+      document.getElementById('joinListenBtn').onclick = function () {
+        window.location.href = 'index.html?song=' + user.listening;
+      };
+    } else if (existingPill) {
+      existingPill.remove();
+    }
+  }
+
+  /* ---------- init ---------- */
+  renderFriendsList();
+  renderGroupsList();
+
+  var params = new URLSearchParams(window.location.search);
+  var withId = params.get('with');
+  if (withId && db.users[withId] && db.users[withId].chatStatus === 'friend') {
+    openFriendChat(withId);
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Profile · Simple CSS Waves</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" id="backBtn" type="button">
+    <svg viewBox="0 0 24 24"><path d="M15.5 4.5L8 12l7.5 7.5 1.4-1.4L10.8 12l6.1-6.1z"/></svg>
+    Home
+  </button>
+  <span class="page-title">Your Profile</span>
+</div>
+
+<div class="page-body">
+
+  <div class="myprofile-pic-wrap">
+    <div class="myprofile-pic" id="myPic"></div>
+  </div>
+
+  <div class="profile-section-title">Nickname</div>
+  <div class="form-field">
+    <input type="text" id="nicknameInput" placeholder="What should people call you?">
+  </div>
+
+  <div class="profile-section-title">Bio</div>
+  <div class="form-field">
+    <textarea id="bioInput" rows="3" placeholder="Say something about yourself…"></textarea>
+  </div>
+
+  <div class="profile-section-title">Genres you like</div>
+  <div class="genre-tags" id="genreTags"></div>
+  <div style="margin-top:10px;">
+    <input type="text" class="genre-add-input" id="genreAddInput" placeholder="+ Add genre">
+  </div>
+
+  <div class="profile-section-title">Connected from Spotify</div>
+  <div class="locked-field">
+    <img id="spotifyPic" src="" alt="">
+    <span class="locked-field-text" id="spotifyUsernameText"></span>
+    <span class="locked-field-badge">SYNCED · NOT EDITABLE</span>
+  </div>
+
+  <div style="margin-top: 30px;">
+    <button class="panel-primary-btn" id="saveBtn" type="button">Save changes</button>
+  </div>
+</div>
+
+<div class="save-toast" id="saveToast">Profile saved</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  var db = CSS_APP.load();
+  var me = db.me;
+
+  function renderPic() {
+    document.getElementById('myPic').innerHTML = me.pic ? '<img src="' + me.pic + '" alt="Your profile picture">' : '';
+  }
+  renderPic();
+
+  document.getElementById('nicknameInput').value = me.nickname || '';
+  document.getElementById('bioInput').value = me.bio || '';
+
+  document.getElementById('spotifyPic').src = me.spotifyPic || 'profile1.png';
+  document.getElementById('spotifyUsernameText').textContent = '@' + me.spotifyUsername;
+
+  /* genres */
+  function renderGenres() {
+    var wrap = document.getElementById('genreTags');
+    wrap.innerHTML = '';
+    (me.genres || []).forEach(function (g, i) {
+      var tag = document.createElement('span');
+      tag.className = 'genre-tag';
+      tag.innerHTML = '<span>' + g + '</span><button aria-label="Remove ' + g + '">&times;</button>';
+      tag.querySelector('button').addEventListener('click', function () {
+        me.genres.splice(i, 1);
+        renderGenres();
+      });
+      wrap.appendChild(tag);
+    });
+  }
+  renderGenres();
+
+  document.getElementById('genreAddInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      var val = e.target.value.trim();
+      if (val) {
+        me.genres = me.genres || [];
+        me.genres.push(val);
+        e.target.value = '';
+        renderGenres();
+      }
+    }
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', function () {
+    me.nickname = document.getElementById('nicknameInput').value.trim();
+    me.bio = document.getElementById('bioInput').value.trim();
+    CSS_APP.save(db);
+    var toast = document.getElementById('saveToast');
+    toast.classList.add('show');
+    setTimeout(function () { toast.classList.remove('show'); }, 1800);
+  });
+
+  document.getElementById('backBtn').addEventListener('click', function () {
+    window.location.href = 'index.html';
+  });
+})();
+</script>
+
+</body>
+</html>

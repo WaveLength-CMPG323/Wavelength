@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple CSS Waves</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!--Hey! This is the original version
+of Simple CSS Waves-->
+
+<div class="header">
+
+<!--Top navigation bar-->
+<nav class="topnav">
+  <div class="nav-links">
+    <a href="my-profile.html" class="nav-profile-link" aria-label="Your profile">
+      <span class="nav-profile-pic" id="navProfilePic"></span>
+      <span>Profile</span>
+    </a>
+    <a href="chat.html" class="nav-chat-link">Chat<span class="notif-dot" id="chatDot" hidden></span></a>
+    <a href="#notifications" class="nav-notif" id="notifNavLink">Notifications<span class="notif-dot" id="notifDot" hidden></span></a>
+  </div>
+  <div class="nav-search">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/>
+    </svg>
+    <input type="text" id="searchInput" placeholder="Search / filter" aria-label="Search or filter" />
+  </div>
+</nav>
+<!--Top navigation bar ends-->
+
+<!--Content before waves-->
+<div class="inner-header flex" style="flex-direction: column;">
+
+<!--Weekly challenge banner-->
+<div class="challenge-banner">
+  <span class="challenge-label">Weekly Challenges</span>
+  <button class="challenge-join-btn" id="challengeJoinBtn" type="button">Join</button>
+</div>
+<!--Weekly challenge banner ends-->
+
+<div class="flex">
+<!--Just the logo.. Don't mind this-->
+<svg version="1.1" class="logo" baseProfile="tiny" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 500 500" xml:space="preserve">
+<path fill="#FFFFFF" stroke="#000000" stroke-width="10" stroke-miterlimit="10" d="M57,283" />
+<g><path fill="#fff"
+d="M250.4,0.8C112.7,0.8,1,112.4,1,250.2c0,137.7,111.7,249.4,249.4,249.4c137.7,0,249.4-111.7,249.4-249.4
+C499.8,112.4,388.1,0.8,250.4,0.8z M383.8,326.3c-62,0-101.4-14.1-117.6-46.3c-17.1-34.1-2.3-75.4,13.2-104.1
+c-22.4,3-38.4,9.2-47.8,18.3c-11.2,10.9-13.6,26.7-16.3,45c-3.1,20.8-6.6,44.4-25.3,62.4c-19.8,19.1-51.6,26.9-100.2,24.6l1.8-39.7		c35.9,1.6,59.7-2.9,70.8-13.6c8.9-8.6,11.1-22.9,13.5-39.6c6.3-42,14.8-99.4,141.4-99.4h41L333,166c-12.6,16-45.4,68.2-31.2,96.2	c9.2,18.3,41.5,25.6,91.2,24.2l1.1,39.8C390.5,326.2,387.1,326.3,383.8,326.3z" />
+</g>
+</svg>
+<h1>Simple CSS Waves</h1>
+</div>
+</div>
+
+<!--Waves Container-->
+<div>
+<svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+<defs>
+<path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+</defs>
+<g class="parallax">
+<use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7)" />
+<use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
+<use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
+<use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
+</g>
+</svg>
+</div>
+<!--Waves end-->
+
+<!--Floating album covers-->
+<div class="ocean-floaters" id="oceanFloaters"></div>
+<!--Floating album covers end-->
+
+</div>
+<!--Header ends-->
+
+<!--Content starts-->
+<div class="content flex">
+  <p>By.Goodkatz | Free to use </p>
+</div>
+<!--Content ends-->
+
+<!--Weekly challenge panel-->
+<div class="nav-panel-backdrop" id="challengeBackdrop"></div>
+<div class="nav-panel nav-panel-large" id="challengePanel" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="nav-panel-header">
+    <span id="challengePanelTitle" class="nav-panel-title"></span>
+    <button class="nav-panel-close" id="challengePanelClose" type="button" aria-label="Close panel">&times;</button>
+  </div>
+  <div class="challenge-panel-body">
+    <div class="challenge-countdown" id="challengeCountdown"></div>
+    <div class="challenge-reward-preview" id="challengeReward"></div>
+    <div class="challenge-search-wrap">
+      <input type="text" class="challenge-search-input" id="challengeSearchInput" placeholder="Search for a song to upload…" autocomplete="off" />
+      <div class="challenge-search-results" id="challengeSearchResults" hidden></div>
+    </div>
+    <button class="challenge-submit-btn" id="challengeSubmitBtn" hidden>Submit</button>
+    <div class="challenge-submitted-note" id="challengeSubmittedNote" hidden>Entered — good luck!</div>
+    <div class="challenge-limit-note">Limited to one entry per week.</div>
+  </div>
+</div>
+<!--Weekly challenge panel ends-->
+
+<!--Notifications panel-->
+<div class="nav-panel-backdrop" id="notifBackdrop"></div>
+<div class="nav-panel" id="notifPanel" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="nav-panel-header">
+    <span class="nav-panel-title">Notifications</span>
+    <button class="nav-panel-close" id="notifPanelClose" type="button" aria-label="Close panel">&times;</button>
+  </div>
+  <div class="nav-panel-body" id="notifPanelBody" style="padding: 8px 20px; overflow-y:auto;"></div>
+</div>
+<!--Notifications panel ends-->
+
+<!--Big song panel-->
+<div class="song-panel-backdrop" id="songBackdrop"></div>
+<div class="song-panel" id="songPanel" role="dialog" aria-modal="true" aria-hidden="true">
+  <button class="song-panel-close" id="songPanelClose" type="button" aria-label="Close">&times;</button>
+  <div class="song-panel-art" id="songPanelArtWrap"></div>
+  <div class="song-panel-progress"><div class="song-panel-progress-fill" id="songPanelProgressFill"></div></div>
+  <div class="song-panel-times"><span>0:00</span><span>3:00</span></div>
+  <div class="song-panel-transport">
+    <button class="song-panel-playpause" id="songPanelPlayPause" type="button" aria-label="Play">
+      <svg class="song-icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg class="song-icon-pause" viewBox="0 0 24 24" hidden><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+    </button>
+  </div>
+  <div class="song-panel-title" id="songPanelTitle"></div>
+  <div class="song-panel-artist" id="songPanelArtist"></div>
+  <div class="song-panel-actions">
+    <button class="song-panel-action-btn" id="songPanelLikeBtn" type="button">Like</button>
+    <button class="song-panel-action-btn" id="songPanelPlaylistBtn" type="button">Add to Playlist</button>
+    <button class="song-panel-action-btn end-song-action" id="songPanelEndBtn" type="button">End Song</button>
+  </div>
+  <button class="song-panel-owner" id="songPanelOwner" type="button">
+    <img id="songPanelOwnerPic" src="" alt="">
+    <span>
+      <span class="song-panel-owner-label">Uploaded by</span><br>
+      <span class="song-panel-owner-name" id="songPanelOwnerName"></span>
+    </span>
+  </button>
+</div>
+<!--Big song panel ends-->
+
+<script src="app.js"></script>
+<script>
+(function () {
+  var db = CSS_APP.load();
+  CSS_APP.rolloverChallengeIfNeeded(db);
+
+  /* ---------- nav profile pic ---------- */
+  var navPic = document.getElementById('navProfilePic');
+  if (db.me.pic) navPic.innerHTML = '<img src="' + db.me.pic + '" alt="Your profile picture">';
+
+  /* ---------- notification / chat dots ---------- */
+  function refreshDots() {
+    var pendingCount = db.notifications.filter(function (n) { return n.status === 'pending'; }).length;
+    document.getElementById('notifDot').hidden = pendingCount === 0;
+    document.getElementById('chatDot').hidden = !db.hasChatDot;
+  }
+  refreshDots();
+
+  /* ---------- floaters ---------- */
+  var floatersEl = document.getElementById('oceanFloaters');
+  var floaterDurations = ['34s', '42s', '38s', '30s', '46s'];
+  var floaterDelays = ['-2s', '-18s', '-30s', '-8s', '-22s'];
+  var floaterBottoms = ['20%', '6%', '30%', '14%', '24%'];
+
+  function renderFloaters() {
+    floatersEl.innerHTML = '';
+    db.floaterOrder.forEach(function (songId, i) {
+      var song = db.songs[songId];
+      if (!song) return;
+      var btn = document.createElement('button');
+      btn.className = 'floater floater-' + ((i % 5) + 1);
+      btn.type = 'button';
+      btn.dataset.songId = songId;
+      btn.style.animationDuration = floaterDurations[i % floaterDurations.length];
+      btn.style.animationDelay = floaterDelays[i % floaterDelays.length];
+      btn.style.bottom = floaterBottoms[i % floaterBottoms.length];
+      btn.setAttribute('aria-label', 'Play ' + song.title + ' by ' + song.artist);
+      btn.innerHTML = cssCoverHTML(song);
+      btn.addEventListener('click', function () { openSongPanel(songId); });
+      floatersEl.appendChild(btn);
+    });
+  }
+  renderFloaters();
+
+  /* Search / filter floaters */
+  document.getElementById('searchInput').addEventListener('input', function (e) {
+    var query = e.target.value.trim().toLowerCase();
+    floatersEl.querySelectorAll('.floater').forEach(function (f) {
+      var song = db.songs[f.dataset.songId];
+      var matches = query === '' || song.title.toLowerCase().indexOf(query) !== -1 || song.artist.toLowerCase().indexOf(query) !== -1;
+      f.classList.toggle('hidden', !matches);
+    });
+  });
+
+  /* ---------- generic small nav-panel open/close (used by notifications) ---------- */
+  function wirePanel(panelId, backdropId, closeId, onOpen) {
+    var panel = document.getElementById(panelId);
+    var backdrop = document.getElementById(backdropId);
+    var closeBtn = document.getElementById(closeId);
+    function open() {
+      if (onOpen) onOpen();
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      backdrop.classList.add('open');
+    }
+    function close() {
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+      backdrop.classList.remove('open');
+    }
+    closeBtn.addEventListener('click', close);
+    backdrop.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    return { open: open, close: close };
+  }
+
+  /* ---------- Notifications panel ---------- */
+  function renderNotifications() {
+    var body = document.getElementById('notifPanelBody');
+    body.innerHTML = '';
+    if (db.notifications.length === 0) {
+      body.innerHTML = '<p style="font-family:\'Lato\',sans-serif;font-size:13px;color:#999;">No notifications yet.</p>';
+      return;
+    }
+    db.notifications.forEach(function (n) {
+      var user = db.users[n.userId];
+      var row = document.createElement('div');
+      row.className = 'notif-row';
+      if (n.status === 'pending') {
+        row.innerHTML = '<img src="' + user.pic + '" alt="' + user.name + '">' +
+          '<span class="notif-row-text">' + user.name + ' wants to chat with you</span>' +
+          '<span class="notif-actions">' +
+          '<button class="notif-accept-btn" data-id="' + n.id + '">Accept</button>' +
+          '<button class="notif-decline-btn" data-id="' + n.id + '">Decline</button>' +
+          '</span>';
+      } else {
+        row.innerHTML = '<img src="' + user.pic + '" alt="' + user.name + '">' +
+          '<span class="notif-resolved-note">' + user.name + ' was ' + n.status + '</span>';
+      }
+      body.appendChild(row);
+    });
+    body.querySelectorAll('.notif-accept-btn').forEach(function (b) {
+      b.addEventListener('click', function () { resolveNotif(b.dataset.id, 'accepted'); });
+    });
+    body.querySelectorAll('.notif-decline-btn').forEach(function (b) {
+      b.addEventListener('click', function () { resolveNotif(b.dataset.id, 'declined'); });
+    });
+  }
+
+  function resolveNotif(id, status) {
+    var n = db.notifications.find(function (n) { return n.id === id; });
+    if (!n) return;
+    n.status = status;
+    if (status === 'accepted') {
+      db.users[n.userId].chatStatus = 'friend';
+      if (!db.chats[n.userId]) db.chats[n.userId] = [];
+    }
+    CSS_APP.save(db);
+    renderNotifications();
+    refreshDots();
+  }
+
+  var notifPanelCtrl = wirePanel('notifPanel', 'notifBackdrop', 'notifPanelClose', renderNotifications);
+  document.getElementById('notifNavLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    notifPanelCtrl.open();
+  });
+
+  /* ---------- Weekly challenge panel ---------- */
+  var challengePanelCtrl = wirePanel('challengePanel', 'challengeBackdrop', 'challengePanelClose', renderChallenge);
+  document.getElementById('challengeJoinBtn').addEventListener('click', challengePanelCtrl.open);
+
+  var countdownTimer = null;
+
+  function renderChallenge() {
+    document.getElementById('challengePanelTitle').textContent = db.challenge.theme;
+    tickCountdown();
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(tickCountdown, 1000);
+    renderReward();
+    document.getElementById('challengeSearchInput').value = '';
+    document.getElementById('challengeSearchResults').hidden = true;
+    var alreadyEntered = !!db.challenge.mySubmission;
+    document.getElementById('challengeSearchInput').disabled = alreadyEntered;
+    document.getElementById('challengeSubmitBtn').hidden = true;
+    document.getElementById('challengeSubmittedNote').hidden = !alreadyEntered;
+    pendingChallengeSong = null;
+  }
+
+  function tickCountdown() {
+    var remaining = db.challenge.deadline - Date.now();
+    document.getElementById('challengeCountdown').textContent = remaining > 0 ? cssFormatCountdown(remaining) + ' left' : 'Challenge closed';
+  }
+
+  function renderReward() {
+    var rewardEl = document.getElementById('challengeReward');
+    if (db.challenge.mySubmission) {
+      var song = db.songs[db.challenge.mySubmission.songId];
+      rewardEl.className = 'challenge-reward-preview unlocked';
+      rewardEl.innerHTML = cssCoverHTML(song);
+    } else {
+      rewardEl.className = 'challenge-reward-preview';
+      rewardEl.innerHTML = '<span class="reward-empty">Themed border reward — upload a song to unlock</span>';
+    }
+  }
+
+  // Mock "Spotify search" — any song in the catalog can be submitted to the
+  // challenge, not just tracks already floating in the ocean.
+  var pendingChallengeSong = null;
+  document.getElementById('challengeSearchInput').addEventListener('input', function (e) {
+    var query = e.target.value;
+    var resultsEl = document.getElementById('challengeSearchResults');
+    pendingChallengeSong = null;
+    document.getElementById('challengeSubmitBtn').hidden = true;
+    var matches = CSS_APP.searchSpotifyCatalog(query);
+    if (matches.length === 0) { resultsEl.hidden = true; return; }
+    resultsEl.hidden = false;
+    resultsEl.innerHTML = '';
+    matches.forEach(function (s) {
+      var row = document.createElement('div');
+      row.className = 'challenge-search-result';
+      row.innerHTML = cssCoverHTML(s) + '<span>' + s.title + ' — ' + s.artist + '</span>';
+      row.addEventListener('click', function () {
+        document.getElementById('challengeSearchInput').value = s.title + ' — ' + s.artist;
+        resultsEl.hidden = true;
+        pendingChallengeSong = s;
+        document.getElementById('challengeSubmitBtn').hidden = false;
+      });
+      resultsEl.appendChild(row);
+    });
+  });
+
+  document.getElementById('challengeSubmitBtn').addEventListener('click', function () {
+    if (!pendingChallengeSong) return;
+    var newId = 'me-' + Date.now();
+    db.songs[newId] = { id: newId, title: pendingChallengeSong.title, artist: pendingChallengeSong.artist, cover: null, ownerId: 'me' };
+    db.floaterOrder.push(newId);
+    db.challenge.mySubmission = { songId: newId };
+    CSS_APP.save(db);
+    renderFloaters();
+    document.getElementById('challengeSubmitBtn').hidden = true;
+    document.getElementById('challengeSearchInput').disabled = true;
+    document.getElementById('challengeSubmittedNote').hidden = false;
+    renderReward();
+  });
+
+  /* ---------- Big song panel ---------- */
+  var songPanel = document.getElementById('songPanel');
+  var songBackdrop = document.getElementById('songBackdrop');
+  var currentSongId = null;
+  var isPlaying = false;
+  var activeFloaterEl = null;
+
+  function openSongPanel(songId) {
+    var song = db.songs[songId];
+    if (!song) return;
+
+    // Pause the wave animation on whichever floater is playing, like the
+    // original prototype — only one cover bobs at rest at a time.
+    if (activeFloaterEl) activeFloaterEl.classList.remove('active');
+    var floaterEl = floatersEl.querySelector('.floater[data-song-id="' + songId + '"]');
+    if (floaterEl) {
+      floaterEl.classList.add('active');
+      activeFloaterEl = floaterEl;
+    }
+
+    currentSongId = songId;
+    var owner = song.ownerId === 'me' ? db.me : db.users[song.ownerId];
+    document.getElementById('songPanelArtWrap').innerHTML = cssCoverHTML(song);
+    document.getElementById('songPanelTitle').textContent = song.title;
+    document.getElementById('songPanelArtist').textContent = song.artist;
+    document.getElementById('songPanelOwnerName').textContent = owner.name;
+    document.getElementById('songPanelOwnerPic').src = owner.pic || 'profile1.png';
+
+    var canControl = song.ownerId === 'me';
+    var ppBtn = document.getElementById('songPanelPlayPause');
+    ppBtn.classList.toggle('disabled', !canControl);
+
+    isPlaying = true;
+    setSongPlaying(isPlaying);
+
+    songPanel.classList.add('open');
+    songPanel.setAttribute('aria-hidden', 'false');
+    songBackdrop.classList.add('open');
+  }
+
+  function closeSongPanel() {
+    songPanel.classList.remove('open');
+    songPanel.setAttribute('aria-hidden', 'true');
+    songBackdrop.classList.remove('open');
+    isPlaying = false;
+    setSongPlaying(false);
+    if (activeFloaterEl) {
+      activeFloaterEl.classList.remove('active');
+      activeFloaterEl = null;
+    }
+    currentSongId = null;
+  }
+
+  // Ends the current listening session: closes the panel and sends the
+  // cover sinking beneath the waves (queued for real use once sessions end
+  // automatically — for now it's a manual button).
+  function endSongSession() {
+    if (!currentSongId || !activeFloaterEl) { closeSongPanel(); return; }
+    var floaterToRemove = activeFloaterEl;
+    var songIdToRemove = currentSongId;
+
+    closeSongPanel();
+
+    floaterToRemove.classList.add('sinking');
+    window.setTimeout(function () {
+      if (floaterToRemove.parentNode) floaterToRemove.parentNode.removeChild(floaterToRemove);
+      var idx = db.floaterOrder.indexOf(songIdToRemove);
+      if (idx !== -1) db.floaterOrder.splice(idx, 1);
+      CSS_APP.save(db);
+    }, 5000);
+  }
+
+  document.getElementById('songPanelEndBtn').addEventListener('click', endSongSession);
+
+  function setSongPlaying(playing) {
+    songPanel.classList.toggle('playing', playing);
+    document.querySelector('#songPanelPlayPause .song-icon-play').hidden = playing;
+    document.querySelector('#songPanelPlayPause .song-icon-pause').hidden = !playing;
+  }
+
+  document.getElementById('songPanelClose').addEventListener('click', closeSongPanel);
+  songBackdrop.addEventListener('click', closeSongPanel);
+
+  document.getElementById('songPanelPlayPause').addEventListener('click', function (e) {
+    var song = db.songs[currentSongId];
+    if (!song || song.ownerId !== 'me') return; // grayed out for anyone but the uploader
+    isPlaying = !isPlaying;
+    setSongPlaying(isPlaying);
+  });
+
+  ['songPanelLikeBtn', 'songPanelPlaylistBtn'].forEach(function (id) {
+    document.getElementById(id).addEventListener('click', function () {
+      document.getElementById(id).classList.toggle('active');
+    });
+  });
+
+  document.getElementById('songPanelOwner').addEventListener('click', function () {
+    var song = db.songs[currentSongId];
+    if (!song) return;
+    window.location.href = 'profile.html?id=' + song.ownerId;
+  });
+
+  /* ---------- Deep link support: chat.html "Join" sends ?song=ID ---------- */
+  var params = new URLSearchParams(window.location.search);
+  var songParam = params.get('song');
+  if (songParam && db.songs[songParam]) {
+    openSongPanel(songParam);
+  }
+})();
+</script>
+
+</body>
+</html>

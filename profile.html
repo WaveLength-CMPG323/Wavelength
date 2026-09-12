@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile · Simple CSS Waves</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page-header">
+  <button class="back-btn" id="backBtn" type="button">
+    <svg viewBox="0 0 24 24"><path d="M15.5 4.5L8 12l7.5 7.5 1.4-1.4L10.8 12l6.1-6.1z"/></svg>
+    Home
+  </button>
+  <span class="page-title">Profile</span>
+</div>
+
+<div class="page-body">
+  <div class="profile-hero">
+    <div class="profile-hero-pic" id="profileHeroPic"></div>
+    <div class="profile-hero-name" id="profileHeroName"></div>
+    <div class="profile-stats">
+      <div class="profile-stat"><strong id="profileFollowers"></strong><span>Followers</span></div>
+      <div class="profile-stat"><strong id="profileFollowing"></strong><span>Following</span></div>
+    </div>
+    <div class="profile-actions">
+      <button class="profile-action-btn" id="followBtn" type="button">Follow</button>
+      <button class="profile-action-btn secondary" id="requestBtn" type="button">Request to Chat</button>
+    </div>
+  </div>
+
+  <div class="profile-section-title">Top tracks</div>
+  <div class="top-tracks-list" id="topTracksList"></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  var db = CSS_APP.load();
+  var params = new URLSearchParams(window.location.search);
+  var userId = params.get('id');
+  var user = db.users[userId];
+
+  if (!user) {
+    document.querySelector('.page-body').innerHTML = '<p>That profile couldn\'t be found.</p>';
+    return;
+  }
+
+  document.title = user.name + ' · Simple CSS Waves';
+  document.getElementById('profileHeroPic').innerHTML = '<img src="' + user.pic + '" alt="' + user.name + '">';
+  document.getElementById('profileHeroName').textContent = user.name;
+  document.getElementById('profileFollowers').textContent = user.followers.toLocaleString();
+  document.getElementById('profileFollowing').textContent = user.following.toLocaleString();
+
+  var followBtn = document.getElementById('followBtn');
+  function renderFollowBtn() {
+    followBtn.textContent = user.followedByMe ? 'Following' : 'Follow';
+    followBtn.classList.toggle('secondary', user.followedByMe);
+  }
+  renderFollowBtn();
+  followBtn.addEventListener('click', function () {
+    user.followedByMe = !user.followedByMe;
+    CSS_APP.save(db);
+    renderFollowBtn();
+  });
+
+  var requestBtn = document.getElementById('requestBtn');
+  function renderRequestBtn() {
+    if (user.chatStatus === 'friend') {
+      requestBtn.textContent = 'Message';
+      requestBtn.classList.remove('done');
+    } else if (user.chatStatus === 'pending_sent') {
+      requestBtn.textContent = 'Requested';
+      requestBtn.classList.add('done');
+    } else {
+      requestBtn.textContent = 'Request to Chat';
+      requestBtn.classList.remove('done');
+    }
+  }
+  renderRequestBtn();
+  requestBtn.addEventListener('click', function () {
+    if (user.chatStatus === 'friend') {
+      window.location.href = 'chat.html?with=' + userId;
+      return;
+    }
+    if (user.chatStatus === 'pending_sent') return;
+    user.chatStatus = 'pending_sent';
+    CSS_APP.save(db);
+    renderRequestBtn();
+  });
+
+  var tracksList = document.getElementById('topTracksList');
+  var tracks = Object.values(db.songs).filter(function (s) { return s.ownerId === userId; });
+  if (tracks.length === 0) {
+    tracksList.innerHTML = '<p style="color:#999;font-size:13px;">No tracks yet.</p>';
+  } else {
+    tracks.forEach(function (s) {
+      var row = document.createElement('div');
+      row.className = 'top-track-row';
+      row.innerHTML = cssCoverHTML(s) +
+        '<span><span class="top-track-name">' + s.title + '</span><br>' +
+        '<span class="top-track-artist">' + s.artist + '</span></span>';
+      row.addEventListener('click', function () {
+        window.location.href = 'index.html?song=' + s.id;
+      });
+      tracksList.appendChild(row);
+    });
+  }
+
+  document.getElementById('backBtn').addEventListener('click', function () {
+    window.location.href = 'index.html';
+  });
+})();
+</script>
+
+</body>
+</html>
