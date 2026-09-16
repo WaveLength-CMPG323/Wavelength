@@ -4,10 +4,17 @@ import { SocialFeedWireframe } from './components/SocialFeedWireframe';
 import { WeeklyChallengesWireframe } from './components/WeeklyChallengesWireframe';
 import { AudioPlayerBar } from './components/AudioPlayerBar';
 import { mockProfile, mockPosts, mockChallenges } from './mockData';
-import { User, Radio, Trophy, Compass, Flame } from 'lucide-react';
+import { User, Radio, Compass, Flame } from 'lucide-react';
+import { LandingPage } from './features/landing/LandingPage';
 
 export default function App() {
   const [activeView, setActiveView] = useState<'feed' | 'profile'>('feed');
+
+  const showLandingPage = true;
+
+  if (showLandingPage) {
+    return <LandingPage />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col pb-24">
