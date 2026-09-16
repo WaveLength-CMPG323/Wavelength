@@ -7,13 +7,11 @@ top.
 ## Tech stack
 
 - **React 19** + **TypeScript**
-- **Vite** — dev server and build
 - **Tailwind CSS v4** — styling
 - **Framer Motion** — panel/modal animations
 - **React Router** — client-side routing
 - **lucide-react** — icon set
 - **HTML5 Canvas API** — the ocean itself (waves + drifting album-art markers)
-- **socket.io-client** — installed, not yet wired up (see Known gaps)
 
 All app data currently comes from a mock layer backed by `localStorage` —
 there is no backend yet.
