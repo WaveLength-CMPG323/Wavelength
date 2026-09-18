@@ -1,0 +1,227 @@
+:root{
+  --indigo: #3d2fb0;
+  --violet: #4a3cc9;
+  --blue:   #2f6fd8;
+  --teal:   #17b6c4;
+  --ink:    #0c1230;
+  --text-soft: rgba(255,255,255,0.78);
+}
+
+*{ box-sizing:border-box; }
+
+html,body{
+  margin:0; padding:0; height:100%;
+  font-family:'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.page{
+  position:relative;
+  height:100vh;
+  min-height:560px;
+  overflow:hidden;
+  border:1px solid rgba(150,215,235,0.55);
+  background:linear-gradient(125deg, var(--indigo) 0%, var(--violet) 28%, var(--blue) 62%, var(--teal) 100%);
+  display:flex;
+  flex-direction:column;
+}
+
+/* ---------- Brand, top-left ---------- */
+.brand{
+  position:absolute;
+  top:32px; left:36px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  z-index:5;
+}
+.brand-mark{
+  width:38px; height:38px;
+  border-radius:50%;
+  background:#ffffff;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.brand-mark svg{ width:20px; height:20px; }
+.brand-word{
+  color:#ffffff;
+  font-size:22px;
+  font-weight:600;
+  letter-spacing:0.2px;
+}
+.tagline{
+  position:absolute;
+  top:80px; left:37px;
+  color:var(--text-soft);
+  font-size:13px;
+  line-height:1.5;
+  max-width:260px;
+  z-index:5;
+}
+
+/* ---------- Center card ---------- */
+.center-wrap{
+  position:relative;
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:6;
+  padding:0 24px;
+}
+
+.card{
+  width:100%;
+  max-width:360px;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.35);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-radius:20px;
+  padding:36px 34px 30px;
+  text-align:center;
+  box-shadow:0 20px 45px rgba(10,15,45,0.28);
+}
+
+.card h1{
+  margin:0 0 8px;
+  color:#ffffff;
+  font-size:24px;
+  font-weight:600;
+}
+
+.card p{
+  margin:0 0 24px;
+  color:var(--text-soft);
+  font-size:13px;
+  line-height:1.5;
+}
+
+.spotify-btn{
+  width:100%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  background:#0c1230;
+  color:#ffffff;
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:999px;
+  padding:13px 20px;
+  font-size:14px;
+  font-weight:500;
+  font-family:inherit;
+  cursor:pointer;
+  transition:background 0.15s ease;
+}
+.spotify-btn:hover{ background:#171d40; }
+.spotify-btn:focus-visible{ outline:2px solid #ffffff; outline-offset:2px; }
+.spotify-btn svg{ width:18px; height:18px; flex-shrink:0; }
+
+.fine-print{
+  margin-top:16px;
+  color:rgba(255,255,255,0.5);
+  font-size:11px;
+}
+
+/* ---------- Waves (parallax technique from Simple CSS Waves) ---------- */
+.waves-wrap{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  width:100%;
+  z-index:2;
+  pointer-events:none;
+  line-height:0;
+}
+.waves{
+  position:relative;
+  display:block;
+  width:100%;
+  height:18vh;
+  min-height:90px;
+  max-height:160px;
+}
+
+/* ---------- Floating track cards ----------
+   Anchored inside the SAME bottom band as the waves (not the full page),
+   so their "bottom" percentages are read against the wave's own height
+   instead of the viewport's — that's what keeps them riding the crest
+   at any screen size instead of hovering somewhere in the open gradient. */
+.ocean-floaters{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  width:100%;
+  height:18vh;
+  min-height:90px;
+  max-height:160px;
+  z-index:4;
+  pointer-events:none;
+}
+
+.float-card{
+  position:absolute;
+  width:64px; height:64px;
+  border-radius:12px;
+  border:2px solid rgba(255,255,255,0.55);
+  box-shadow:0 10px 22px rgba(5,10,35,0.35);
+  display:flex;
+  align-items:flex-end;
+  padding:6px;
+}
+.float-card span{
+  color:rgba(255,255,255,0.85);
+  font-size:8px;
+  font-weight:600;
+  line-height:1.2;
+}
+.fc-1{ left:9%; bottom:58%; transform:rotate(-6deg);
+  background:linear-gradient(150deg,#ff8a5c,#7b3fd6); }
+.fc-2{ left:47%; bottom:18%; transform:rotate(4deg);
+  background:linear-gradient(150deg,#1d2b53,#ff5c7a); }
+.fc-3{ right:8%; bottom:38%; transform:rotate(-3deg);
+  background:linear-gradient(150deg,#0f9b8e,#22c55e); }
+
+@media (prefers-reduced-motion: no-preference){
+  .parallax > use{
+    animation:move-forever 25s cubic-bezier(.55,.5,.45,.5) infinite;
+  }
+  .parallax > use:nth-child(1){ animation-delay:-2s; animation-duration:7s; }
+  .parallax > use:nth-child(2){ animation-delay:-3s; animation-duration:10s; }
+  .parallax > use:nth-child(3){ animation-delay:-4s; animation-duration:13s; }
+  .parallax > use:nth-child(4){ animation-delay:-5s; animation-duration:20s; }
+
+  .float-card{
+    left:0; right:auto;
+    animation-name:float-ocean;
+    animation-timing-function:ease-in-out;
+    animation-iteration-count:infinite;
+  }
+  .fc-1{ animation-duration:34s; animation-delay:-4s; }
+  .fc-2{ animation-duration:42s; animation-delay:-24s; }
+  .fc-3{ animation-duration:38s; animation-delay:-34s; }
+}
+@keyframes move-forever{
+  0%{ transform:translate3d(-90px,0,0); }
+  100%{ transform:translate3d(85px,0,0); }
+}
+@keyframes float-ocean{
+  0%{   transform:translate(-15vw,0)    rotate(-2deg); }
+  9%{   transform:translate(-2vw,-14px) rotate(1deg); }
+  18%{  transform:translate(11vw,10px)  rotate(-2deg); }
+  27%{  transform:translate(24vw,-15px) rotate(2deg); }
+  36%{  transform:translate(37vw,12px)  rotate(-1deg); }
+  45%{  transform:translate(50vw,-10px) rotate(1deg); }
+  55%{  transform:translate(64vw,14px)  rotate(-2deg); }
+  64%{  transform:translate(77vw,-12px) rotate(2deg); }
+  73%{  transform:translate(90vw,9px)   rotate(-1deg); }
+  82%{  transform:translate(103vw,-14px) rotate(1deg); }
+  100%{ transform:translate(115vw,0)    rotate(-2deg); }
+}
+
+@media (max-width:640px){
+  .brand{ top:20px; left:20px; }
+  .tagline{ top:64px; left:21px; max-width:70%; }
+  .float-card{ width:48px; height:48px; }
+  .card{ padding:28px 24px 24px; }
+  .waves{ height:70px; min-height:70px; }
+  .ocean-floaters{ height:70px; min-height:70px; }
+}
