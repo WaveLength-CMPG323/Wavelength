@@ -1,7 +1,13 @@
 {
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
     "framer-motion": "^13.4.0",
     "lucide-react": "^1.47.0",
+    "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
@@ -13,6 +19,7 @@
     "autoprefixer": "^10.6.1",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0"
   }
 }
