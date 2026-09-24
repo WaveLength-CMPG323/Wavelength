@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* Palette carried over from wavelength_login.css */
+@theme {
+  --color-wl-indigo: #3d2fb0;
+  --color-wl-violet: #4a3cc9;
+  --color-wl-blue: #2f6fd8;
+  --color-wl-teal: #17b6c4;
+  --color-ink: #0c1230;
+  --font-sans: 'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: var(--font-sans); }
