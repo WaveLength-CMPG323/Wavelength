@@ -3,6 +3,7 @@ import { AnimatePresence } from 'motion/react';
 import { Sidebar } from './components/Sidebar';
 import { Thread } from './components/Thread';
 import { NewGroupModal } from './components/NewGroupModal';
+import { WaveBackground } from './components/WaveBackground';
 import { SEED_CONVERSATIONS } from './data';
 import type { Conversation } from './types';
 
@@ -41,12 +42,14 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-dvh flex-col bg-[#070b16]">
-      <header className="flex shrink-0 items-center gap-4 border-b border-white/10 bg-[#050810] px-5 py-4">
+    <div className="relative isolate flex h-dvh flex-col bg-brand-cobalt">
+      <WaveBackground />
+
+      <header className="flex shrink-0 items-center gap-4 border-b border-white/10 bg-brand-cobalt/50 backdrop-blur-sm px-5 py-4">
         <button
           // TODO: wire this to your router / home route — this project has no home page of its own
           onClick={() => console.log('Navigate to Home')}
-          className="flex items-center gap-1.5 text-sm font-medium text-teal-300 hover:text-teal-200 focus-visible:outline-2 focus-visible:outline-teal-300"
+          className="flex items-center gap-1.5 text-sm font-medium text-brand-azure hover:text-brand-sky focus-visible:outline-2 focus-visible:outline-brand-sky"
         >
           <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 5l-7 7 7 7" />

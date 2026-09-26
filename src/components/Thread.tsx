@@ -44,12 +44,12 @@ export function Thread({ conversation: c, onSend, onBack, className = '' }: Prop
   const subtitle = c.isGroup ? 'Group chat' : c.listening ? `🎧 Listening to ${c.listening}` : c.online ? 'Online' : 'Offline';
 
   return (
-    <section className={`min-w-0 flex-1 flex-col bg-[#070b16] ${className}`}>
-      <header className="flex items-center gap-3 border-b border-white/10 bg-[#050810] px-5 py-4">
+    <section className={`min-w-0 flex-1 flex-col bg-brand-cobalt/50 backdrop-blur-sm ${className}`}>
+      <header className="flex items-center gap-3 border-b border-white/10 bg-brand-cobalt/50 backdrop-blur-sm px-5 py-4">
         <button
           onClick={onBack}
           aria-label="Back to chats"
-          className="rounded-full p-1 text-white/70 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-teal-300 md:hidden"
+          className="rounded-full p-1 text-white/70 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-brand-sky md:hidden"
         >
           <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M15 5l-7 7 7 7" />
@@ -82,7 +82,7 @@ export function Thread({ conversation: c, onSend, onBack, className = '' }: Prop
                 {c.isGroup && !mine && m.author && <span className="mb-1 px-1 text-[11px] text-white/50">{m.author}</span>}
                 <p
                   className={`break-words px-4 py-2.5 text-sm leading-relaxed ${
-                    mine ? 'rounded-2xl rounded-br-sm bg-teal-500 text-[#04222a]' : 'rounded-2xl rounded-bl-sm bg-white/10 text-white'
+                    mine ? 'rounded-2xl rounded-br-sm bg-brand-azure text-white' : 'rounded-2xl rounded-bl-sm bg-white/10 text-white'
                   }`}
                 >
                   {m.text}
@@ -100,7 +100,7 @@ export function Thread({ conversation: c, onSend, onBack, className = '' }: Prop
         <div ref={endRef} />
       </div>
 
-      <form onSubmit={submit} className="flex items-center gap-3 border-t border-white/10 bg-[#050810] px-5 py-4">
+      <form onSubmit={submit} className="flex items-center gap-3 border-t border-white/10 bg-brand-cobalt/55 backdrop-blur-sm px-5 py-4">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -108,13 +108,13 @@ export function Thread({ conversation: c, onSend, onBack, className = '' }: Prop
           aria-label="Message"
           maxLength={2000}
           autoComplete="off"
-          className="min-w-0 flex-1 rounded-full bg-white/10 px-5 py-3 text-sm text-white placeholder:text-white/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300"
+          className="min-w-0 flex-1 rounded-full bg-white/10 px-5 py-3 text-sm text-white placeholder:text-white/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sky"
         />
         <motion.button
           type="submit"
           disabled={!draft.trim()}
           whileTap={{ scale: 0.94 }}
-          className="rounded-full bg-teal-400 px-6 py-3 text-sm font-semibold text-[#04222a] transition disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200"
+          className="rounded-full bg-brand-azure px-6 py-3 text-sm font-semibold text-white transition disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sky"
         >
           Send
         </motion.button>

@@ -37,7 +37,7 @@ export function NewGroupModal({ onCreate, onClose }: Props) {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 8, scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-        className="w-full max-w-sm rounded-2xl border border-white/15 bg-[#0d1424] p-6 text-white shadow-2xl"
+        className="w-full max-w-sm rounded-2xl border border-white/15 bg-brand-cobalt p-6 text-white shadow-2xl"
       >
         <h2 className="text-xl font-semibold">New group</h2>
         <label className="mt-5 block text-sm text-white/60" htmlFor="group-name">Group name</label>
@@ -48,7 +48,7 @@ export function NewGroupModal({ onCreate, onClose }: Props) {
           onChange={(e) => setName(e.target.value)}
           maxLength={30}
           placeholder="e.g. Sunday Vinyl Club"
-          className="mt-1.5 w-full rounded-full bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300"
+          className="mt-1.5 w-full rounded-full bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sky"
         />
 
         <p id="icon-label" className="mt-5 text-sm text-white/60">Group icon</p>
@@ -63,13 +63,13 @@ export function NewGroupModal({ onCreate, onClose }: Props) {
                 aria-checked={selected}
                 aria-label={p.label}
                 onClick={() => setPresetId(p.id)}
-                className="relative grid aspect-square place-items-center rounded-xl text-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-300"
+                className="relative grid aspect-square place-items-center rounded-xl text-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sky"
                 style={{ background: `linear-gradient(135deg, ${p.from}, ${p.to})` }}
               >
                 {selected && (
                   <motion.span
                     layoutId="preset-ring"
-                    className="absolute -inset-1 rounded-[14px] border-2 border-teal-300"
+                    className="absolute -inset-1 rounded-[14px] border-2 border-brand-sky"
                     transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                   />
                 )}
@@ -83,14 +83,14 @@ export function NewGroupModal({ onCreate, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-white/20 px-5 py-2.5 text-sm hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-teal-300"
+            className="rounded-full border border-white/20 px-5 py-2.5 text-sm hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-brand-sky"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={!name.trim()}
-            className="rounded-full bg-teal-400 px-5 py-2.5 text-sm font-semibold text-[#04222a] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200"
+            className="rounded-full bg-brand-azure px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sky"
           >
             Create group
           </button>

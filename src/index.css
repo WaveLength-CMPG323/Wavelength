@@ -1,14 +1,27 @@
 @import "tailwindcss";
 
-/* Palette carried over from wavelength_login.css */
+/* WaveLength interface palette — the three red-dot shades plus the dark base chip */
 @theme {
-  --color-wl-indigo: #3d2fb0;
-  --color-wl-violet: #4a3cc9;
-  --color-wl-blue: #2f6fd8;
-  --color-wl-teal: #17b6c4;
-  --color-ink: #0c1230;
+  --color-brand-sky:      #3CB3FB; /* light accent: hover/focus highlights */
+  --color-brand-azure:    #106EFA; /* primary accent: buttons, sent bubbles, active states */
+  --color-brand-cobalt:   #032E74; /* base app background */
   --font-sans: 'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 html, body, #root { height: 100%; margin: 0; }
 body { font-family: var(--font-sans); }
+
+/* Wave background — ported directly from wavelength_login.css's .parallax/move-forever,
+   same path, same easing, same per-layer timing. Plain CSS animation (not Motion), so it
+   behaves exactly like the reference login page. */
+@keyframes wl-wave-drift {
+  0%   { transform: translate3d(-90px, 0, 0); }
+  100% { transform: translate3d(85px, 0, 0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wl-wave-layer { animation: wl-wave-drift 25s cubic-bezier(.55, .5, .45, .5) infinite; }
+  .wl-wave-layer:nth-child(1) { animation-delay: -2s; animation-duration: 7s; }
+  .wl-wave-layer:nth-child(2) { animation-delay: -3s; animation-duration: 10s; }
+  .wl-wave-layer:nth-child(3) { animation-delay: -4s; animation-duration: 13s; }
+}

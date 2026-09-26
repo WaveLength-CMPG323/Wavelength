@@ -20,13 +20,13 @@ export function Sidebar({ conversations, activeId, onSelect, onNewGroup, classNa
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
   return (
-    <aside className={`flex-col bg-[#0a0e1c] md:w-[320px] md:shrink-0 md:border-r md:border-white/10 ${className}`}>
+    <aside className={`flex-col bg-brand-cobalt/50 backdrop-blur-sm md:w-[320px] md:shrink-0 md:border-r md:border-white/10 ${className}`}>
       <nav className="flex border-b border-white/10 text-sm font-medium">
         {(['friends', 'groups'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`relative flex-1 py-3.5 capitalize transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-300 ${
+            className={`relative flex-1 py-3.5 capitalize transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-sky ${
               tab === t ? 'text-white' : 'text-white/45 hover:text-white/70'
             }`}
           >
@@ -34,7 +34,7 @@ export function Sidebar({ conversations, activeId, onSelect, onNewGroup, classNa
             {tab === t && (
               <motion.span
                 layoutId="tab-underline"
-                className="absolute inset-x-0 bottom-0 h-0.5 bg-teal-400"
+                className="absolute inset-x-0 bottom-0 h-0.5 bg-brand-azure"
                 transition={{ type: 'spring', stiffness: 500, damping: 40 }}
               />
             )}
@@ -49,7 +49,7 @@ export function Sidebar({ conversations, activeId, onSelect, onNewGroup, classNa
         {tab === 'groups' && (
           <button
             onClick={onNewGroup}
-            className="rounded-full border border-white/25 px-3 py-1 text-xs text-white/80 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-teal-300"
+            className="rounded-full border border-white/25 px-3 py-1 text-xs text-white/80 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-brand-sky"
           >
             New group
           </button>
@@ -72,8 +72,8 @@ export function Sidebar({ conversations, activeId, onSelect, onNewGroup, classNa
               <button
                 onClick={() => onSelect(c.id)}
                 aria-current={active}
-                className={`relative flex w-full items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-300 ${
-                  active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.03]'
+                className={`relative flex w-full items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-sky ${
+                  active ? 'bg-brand-azure/25' : 'hover:bg-brand-azure/10'
                 }`}
               >
                 <Avatar name={c.name} avatar={c.avatar} size={44} />
