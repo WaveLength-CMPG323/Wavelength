@@ -1,6 +1,6 @@
 export type AvatarSpec =
-  | { kind: 'initials'; hue: number }      // direct chats: generated, no uploads
-  | { kind: 'preset'; presetId: string };  // groups: must be one of PRESET_ICONS
+  | { kind: 'person'; color: string }      // friends: generic silhouette, solid color — no uploads
+  | { kind: 'preset'; presetId: string };  // groups: must be one of PRESET_ICONS, no uploads
 
 export interface Message {
   id: string;
@@ -16,8 +16,8 @@ export interface Conversation {
   isGroup: boolean;
   avatar: AvatarSpec;
   messages: Message[];
-  unread: number;
-  updatedAt: number;
   online?: boolean;
+  listening?: string; // current track title — friends only, shown in place of "Tap to chat"
   typing?: boolean;
+  updatedAt: number;
 }

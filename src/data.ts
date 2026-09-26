@@ -19,37 +19,25 @@ const min = 60_000, hr = 60 * min, day = 24 * hr;
 
 export const SEED_CONVERSATIONS: Conversation[] = [
   {
-    id: 'c1', name: 'Amara Osei', isGroup: false, avatar: { kind: 'initials', hue: 265 },
-    online: true, typing: true, unread: 0, updatedAt: now - 2 * min,
+    id: 'c1', name: 'Jake Doe', isGroup: false, avatar: { kind: 'person', color: '#3b82f6' },
+    online: true, listening: 'Peace of Mind', updatedAt: now - 5 * min,
     messages: [
-      { id: 'm1', from: 'them', text: 'Have you heard the new Khruangbin record yet?', sentAt: now - 9 * min },
-      { id: 'm2', from: 'me', text: 'Not yet, is it worth a full listen?', sentAt: now - 6 * min },
-      { id: 'm3', from: 'them', text: 'Start with track three. You’ll thank me.', sentAt: now - 2 * min },
+      { id: 'm1', from: 'them', text: 'This track is on repeat for me today.', sentAt: now - 40 * min },
+      { id: 'm2', from: 'me', text: 'Adding it to my queue right now.', sentAt: now - 35 * min },
     ],
   },
   {
-    id: 'c2', name: 'Diego Marchetti', isGroup: false, avatar: { kind: 'initials', hue: 200 },
-    unread: 3, updatedAt: now - 70 * min,
-    messages: [{ id: 'm1', from: 'them', text: 'That playlist you sent is on repeat.', sentAt: now - 70 * min }],
-  },
-  {
-    id: 'c3', name: 'Yuki Tanaka', isGroup: false, avatar: { kind: 'initials', hue: 330 },
-    unread: 0, updatedAt: now - day,
-    messages: [{ id: 'm1', from: 'me', text: 'Let’s trade our favourite city-pop finds.', sentAt: now - day }],
+    id: 'c2', name: 'Theo Park', isGroup: false, avatar: { kind: 'person', color: '#22c55e' },
+    online: false, updatedAt: now - 2 * hr, messages: [],
   },
   {
     id: 'g1', name: 'Friday Listening Club', isGroup: true, avatar: { kind: 'preset', presetId: 'headphones' },
-    unread: 12, updatedAt: now - 3 * day,
-    messages: [
-      { id: 'm1', from: 'them', author: 'Priya', text: 'Album of the week is up for a vote.', sentAt: now - 3 * day },
-    ],
+    updatedAt: now - 3 * day,
+    messages: [{ id: 'm1', from: 'them', author: 'Priya', text: 'Album of the week is up for a vote.', sentAt: now - 3 * day }],
+  },
+  {
+    id: 'g2', name: 'City Pop Crate Diggers', isGroup: true, avatar: { kind: 'preset', presetId: 'vinyl' },
+    updatedAt: now - 6 * hr,
+    messages: [{ id: 'm1', from: 'them', author: 'Mei', text: 'Found a mint copy of Plastic Love today.', sentAt: now - 6 * hr }],
   },
 ];
-
-export function formatStamp(ts: number): string {
-  const d = new Date(ts);
-  const startOfToday = new Date().setHours(0, 0, 0, 0);
-  if (ts >= startOfToday) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  if (ts >= startOfToday - day) return 'Yesterday';
-  return d.toLocaleDateString([], { weekday: 'short' });
-}
