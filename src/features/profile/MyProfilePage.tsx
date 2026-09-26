@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { useData } from '../../data/DataContext';
 import { tierLabel } from '../../data/mockData';
+import { Sparkles } from 'lucide-react';
 
 export default function MyProfilePage() {
   const { db, mutate } = useData();
@@ -12,6 +13,9 @@ export default function MyProfilePage() {
   const [toast, setToast] = useState(false);
 
   const groupsCount = Object.values(db.groups).filter((g) => g.members.includes('me')).length;
+
+  const activeProfileEffect = db.user?.activeProfileEffect;
+  const activeMarkerEffect = db.user?.activeMarkerEffect;
 
   function addGenre(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== 'Enter') return;
@@ -39,15 +43,45 @@ export default function MyProfilePage() {
       <PageHeader title="Your Profile" />
 
       <div className="mx-auto my-8 max-w-4xl rounded-3xl border border-cyan-500/20 bg-[#04385a]/90 p-6 shadow-2xl backdrop-blur-md md:p-8">
-        {/* Header: avatar + tier + editable fields */}
+        {/* Header: Avatar with dynamic profile effect + tier + editable fields */}
         <div className="flex flex-col items-center gap-6 border-b border-cyan-500/20 pb-6 sm:flex-row sm:items-start">
-          <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full border-2 border-cyan-400 bg-slate-300 shadow-md">
-            {me.pic && <img src={me.pic} alt="Your profile" className="h-full w-full object-cover" />}
+          
+          {/* Avatar Container with Active Aura/Cosmetics */}
+          <div className="relative shrink-0">
+            {/* Abyssal Sunken Aura Effect */}
+            {activeProfileEffect === 'abyssal-aura' && (
+              <div className="absolute -inset-2.5 animate-pulse rounded-full bg-gradient-to-tr from-cyan-400 via-sky-300 to-amber-300 opacity-80 blur-md" />
+            )}
+
+            {/* Golden Tide Halo Effect */}
+            {activeProfileEffect === 'golden-tide' && (
+              <div className="absolute -inset-2.5 animate-pulse rounded-full bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 opacity-90 blur-md" />
+            )}
+
+            <div className="relative h-28 w-28 overflow-hidden rounded-full border-2 border-cyan-400 bg-slate-300 shadow-md">
+              {me.pic ? (
+                <img src={me.pic} alt="Your profile" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center font-bold text-slate-800">
+                  {me.nickname?.[0] || 'ME'}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex-1 space-y-4">
-            <div className="inline-block rounded border border-cyan-500/30 bg-cyan-950/80 px-2.5 py-0.5 text-xs text-cyan-300">
-              Tier: {tierLabel(me.genres.length)}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-block rounded border border-cyan-500/30 bg-cyan-950/80 px-2.5 py-0.5 text-xs text-cyan-300">
+                Tier: {tierLabel(me.genres.length)}
+              </div>
+
+              {/* Active Effect Indicator */}
+              {(activeProfileEffect || activeMarkerEffect) && (
+                <div className="inline-flex items-center gap-1 rounded border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+                  <Sparkles className="h-3 w-3" />
+                  <span>Cosmetics Active</span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -82,6 +116,27 @@ export default function MyProfilePage() {
           <div>
             <p className="text-xl font-bold text-cyan-100">{me.genres.length}</p>
             <p className="text-xs uppercase tracking-wider text-cyan-300">Genres</p>
+          </div>
+        </div>
+
+        {/* Active Cosmetics Section */}
+        <div className="border-b border-cyan-500/20 py-6">
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cyan-300">
+            Equipped Ocean Cosmetics
+          </h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-cyan-500/20 bg-[#02182b] p-3 text-xs">
+              <span className="text-slate-400">Profile Aura: </span>
+              <span className="font-semibold text-white">
+                {activeProfileEffect ? activeProfileEffect.replace('-', ' ').toUpperCase() : 'None'}
+              </span>
+            </div>
+            <div className="rounded-xl border border-cyan-500/20 bg-[#02182b] p-3 text-xs">
+              <span className="text-slate-400">Song Marker Effect: </span>
+              <span className="font-semibold text-white">
+                {activeMarkerEffect ? activeMarkerEffect.replace('-', ' ').toUpperCase() : 'None'}
+              </span>
+            </div>
           </div>
         </div>
 

@@ -33,14 +33,11 @@ export default function SongDetailsPanel({
 
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [listenAlong, setListenAlong] =
-    useState(false);
-  const [requestSent, setRequestSent] =
-    useState(false);
+  const [listenAlong, setListenAlong] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
-  const song = songId
-    ? db.songs[songId]
-    : null;
+  // [my song needed from backend]
+  const song = songId ? db.songs[songId] : null;
 
   const owner = song
     ? song.ownerId === 'me'
@@ -49,6 +46,13 @@ export default function SongDetailsPanel({
     : null;
 
   const isMe = song?.ownerId === 'me';
+
+  // Read active cosmetic effect
+  const activeEffect = isMe
+    ? db.user?.activeCosmeticEffect
+    : 'activeCosmeticEffect' in (owner || {})
+    ? (owner as any)?.activeCosmeticEffect
+    : null;
 
   function handleListenAlong() {
     if (!isLoggedIn) {
@@ -70,11 +74,7 @@ export default function SongDetailsPanel({
       return;
     }
 
-    navigate(
-      isMe
-        ? '/profile'
-        : `/users/${owner.id}`
-    );
+    navigate(isMe ? '/profile' : `/users/${owner.id}`);
   }
 
   return (
@@ -88,10 +88,9 @@ export default function SongDetailsPanel({
           onClick={onClose}
         >
           <motion.div
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-              className="song-details-scroll relative max-h-[90vh] w-full max-w-md overflow-x-hidden overflow-y-auto rounded-3xl border border-white/20 bg-gradient-to-br from-[#4034a5]/95 via-[#285eb1]/95 to-[#137f9e]/95 p-6 text-white shadow-[0_24px_80px_rgba(5,10,40,0.45)] backdrop-blur-xl"            initial={{
+            onClick={(event) => event.stopPropagation()}
+            className="song-details-scroll relative max-h-[90vh] w-full max-w-md overflow-x-hidden overflow-y-auto rounded-3xl border border-white/20 bg-gradient-to-br from-[#4034a5]/95 via-[#285eb1]/95 to-[#137f9e]/95 p-6 text-white shadow-[0_24px_80px_rgba(5,10,40,0.45)] backdrop-blur-xl"
+            initial={{
               opacity: 0,
               scale: 0.95,
               y: 12,
@@ -127,16 +126,33 @@ export default function SongDetailsPanel({
               </button>
             </div>
 
-            {/* Album art */}
-            <div className="relative mx-auto mt-1 h-48 w-48">
-              <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-purple-300/30 via-blue-300/25 to-cyan-300/30 blur-xl" />
+            {/* Album art / Song Marker with Cosmetic Aura */}
+            <div className="relative mx-auto mt-1 flex items-center justify-center h-48 w-48">
+              {/* COSMETIC EFFECT AURA FOR SONG MARKER */}
+              {activeEffect === 'abyssal-crest' && (
+                <>
+                  <div className="absolute -inset-4 animate-pulse rounded-3xl bg-gradient-to-tr from-cyan-400 via-sky-300 to-teal-300 opacity-70 blur-xl" />
+                  <div className="absolute -inset-2 animate-ping rounded-3xl border border-cyan-400/40 opacity-40" />
+                </>
+              )}
 
-              <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/30 shadow-2xl">
+              {activeEffect === 'golden-tide' && (
+                <>
+                  <div className="absolute -inset-4 animate-pulse rounded-3xl bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 opacity-80 blur-xl" />
+                  <div className="absolute -inset-2 animate-ping rounded-3xl border border-amber-400/40 opacity-40" />
+                </>
+              )}
+
+              {!activeEffect && (
+                <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-purple-300/30 via-blue-300/25 to-cyan-300/30 blur-xl" />
+              )}
+
+              <div className="relative z-10 h-full w-full overflow-hidden rounded-2xl border border-white/30 shadow-2xl">
                 <Cover song={song} />
               </div>
             </div>
 
-            {/* Song */}
+            {/* Song Details */}
             <div className="relative mt-5 text-center">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
                 Now floating in the Ocean
@@ -151,24 +167,34 @@ export default function SongDetailsPanel({
               </p>
             </div>
 
-            {/* Host */}
+            {/* Host with Cosmetic Aura */}
             <button
               type="button"
               onClick={handleProfile}
               className="relative mt-5 flex w-full items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.08] p-3 text-left transition hover:bg-white/[0.13]"
             >
-              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-white/30 bg-white/10">
-                {owner.pic ? (
-                  <img
-                    src={owner.pic}
-                    alt={owner.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <Music2 className="h-5 w-5 text-white/60" />
-                  </div>
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+                {/* COSMETIC EFFECT AURA FOR HOST AVATAR */}
+                {activeEffect === 'abyssal-crest' && (
+                  <div className="absolute -inset-1 animate-pulse rounded-full bg-cyan-400 opacity-80 blur-md" />
                 )}
+                {activeEffect === 'golden-tide' && (
+                  <div className="absolute -inset-1 animate-pulse rounded-full bg-amber-400 opacity-80 blur-md" />
+                )}
+
+                <div className="relative z-10 h-full w-full overflow-hidden rounded-full border border-white/30 bg-white/10">
+                  {owner.pic ? (
+                    <img
+                      src={owner.pic}
+                      alt={owner.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Music2 className="h-5 w-5 text-white/60" />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -231,16 +257,12 @@ export default function SongDetailsPanel({
 
                 <span
                   className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-                    listenAlong
-                      ? 'bg-cyan-200'
-                      : 'bg-white/20'
+                    listenAlong ? 'bg-cyan-200' : 'bg-white/20'
                   }`}
                 >
                   <span
                     className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${
-                      listenAlong
-                        ? 'left-6'
-                        : 'left-1'
+                      listenAlong ? 'left-6' : 'left-1'
                     }`}
                   />
                 </span>
@@ -248,8 +270,7 @@ export default function SongDetailsPanel({
 
               {!isLoggedIn && (
                 <p className="text-center text-[11px] text-white/45">
-                  Log in with Spotify to listen
-                  along with another user.
+                  Log in with Spotify to listen along with another user.
                 </p>
               )}
             </div>
@@ -259,11 +280,7 @@ export default function SongDetailsPanel({
               <div className="relative mt-5 grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    setLiked(
-                      (current) => !current
-                    )
-                  }
+                  onClick={() => setLiked((current) => !current)}
                   className={`flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-semibold transition ${
                     liked
                       ? 'bg-pink-500 text-white'
@@ -272,32 +289,21 @@ export default function SongDetailsPanel({
                 >
                   <Heart
                     className="h-4 w-4"
-                    fill={
-                      liked
-                        ? 'currentColor'
-                        : 'none'
-                    }
+                    fill={liked ? 'currentColor' : 'none'}
                   />
-
                   {liked ? 'Liked' : 'Like'}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setSaved(
-                      (current) => !current
-                    )
-                  }
+                  onClick={() => setSaved((current) => !current)}
                   className={`rounded-full py-2.5 text-xs font-semibold transition ${
                     saved
                       ? 'bg-white text-[#3d2fb0]'
                       : 'bg-white/10 text-white/70 hover:bg-white/15'
                   }`}
                 >
-                  {saved
-                    ? 'Saved ✓'
-                    : 'Save to Spotify'}
+                  {saved ? 'Saved ✓' : 'Save to Spotify'}
                 </button>
               </div>
             )}
@@ -310,10 +316,7 @@ export default function SongDetailsPanel({
                   <button
                     type="button"
                     onClick={() =>
-                      followUser(
-                        owner.id,
-                        !owner.followedByMe
-                      )
+                      followUser(owner.id, !owner.followedByMe)
                     }
                     className={`flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-xs font-semibold transition ${
                       owner.followedByMe
@@ -322,31 +325,21 @@ export default function SongDetailsPanel({
                     }`}
                   >
                     <UserPlus className="h-4 w-4" />
-
-                    {owner.followedByMe
-                      ? 'Following'
-                      : 'Follow'}
+                    {owner.followedByMe ? 'Following' : 'Follow'}
                   </button>
 
-                  {owner.chatStatus ===
-                    'none' && (
+                  {owner.chatStatus === 'none' && (
                     <button
                       type="button"
                       onClick={() => {
-                        sendChatRequest(
-                          owner.id
-                        );
-
+                        sendChatRequest(owner.id);
                         setRequestSent(true);
                       }}
                       disabled={requestSent}
                       className="flex flex-1 items-center justify-center gap-2 rounded-full bg-white/10 py-2.5 text-xs font-semibold text-white transition hover:bg-white/15 disabled:opacity-50"
                     >
                       <MessageCircle className="h-4 w-4" />
-
-                      {requestSent
-                        ? 'Request sent'
-                        : 'Chat request'}
+                      {requestSent ? 'Request sent' : 'Chat request'}
                     </button>
                   )}
                 </div>
@@ -354,8 +347,7 @@ export default function SongDetailsPanel({
 
             {/* Spotify placeholder note */}
             <p className="relative mt-5 text-center text-[10px] text-white/30">
-              Song metadata and artwork provided
-              by Spotify
+              Song metadata and artwork provided by Spotify
             </p>
           </motion.div>
         </motion.div>
