@@ -14,9 +14,9 @@ export default function MyProfilePage() {
 
   const groupsCount = Object.values(db.groups).filter((g) => g.members.includes('me')).length;
 
-  const activeProfileEffect = db.user?.activeProfileEffect;
-  const activeMarkerEffect = db.user?.activeMarkerEffect;
-
+  const activeProfileEffect = db.me.activeCosmeticEffect;
+  const activeMarkerEffect = db.me.activeCosmeticEffect;
+  
   function addGenre(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== 'Enter') return;
     const value = genreInput.trim();

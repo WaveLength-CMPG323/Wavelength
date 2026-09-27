@@ -33,8 +33,7 @@ export default function NavPanel({
             role="dialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
-            className={`flex max-h-[85vh] w-full flex-col overflow-hidden rounded-2xl border border-cyan-500/20 bg-[#04385a] shadow-2xl ${
-              wide ? 'max-w-md' : 'max-w-sm'
+            className={`flex max-h-[85vh] w-full flex-col overflow-hidden rounded-2xl border border-cyan-400/20 bg-[#071330]/90 shadow-[0_20px_60px_rgba(2,10,25,0.55)] backdrop-blur-xl ${              wide ? 'max-w-md' : 'max-w-sm'
             }`}
             initial={{
               opacity: 0,
@@ -58,8 +57,7 @@ export default function NavPanel({
             }}
           >
             {/* Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-cyan-500/20 px-5 py-4">
-              <span className="text-base font-semibold text-cyan-100">
+              <div className="flex shrink-0 items-center justify-between border-b border-cyan-400/20 bg-white/[0.02] px-5 py-4">              <span className="text-base font-semibold text-cyan-100">
                 {title}
               </span>
 

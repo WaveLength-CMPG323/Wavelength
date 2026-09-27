@@ -34,6 +34,7 @@ export interface Me {
   bio: string;
   spotifyUsername: string;
   spotifyPic: string;
+  activeCosmeticEffect?: string | null;
 }
 
 export interface ChatMessage {

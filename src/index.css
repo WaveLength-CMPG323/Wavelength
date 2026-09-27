@@ -4,9 +4,32 @@
    across the app -- everything else composes from Tailwind's cyan/slate
    scale so the product reads as one consistent thing. */
 :root {
-  --wl-bg: #02182b;      /* page shell */
-  --wl-panel: #04385a;   /* cards / panels */
-  --wl-accent: #1ED760;  /* Spotify green, primary CTA */
+  /* WaveLength — core ocean */
+  --wl-bg: #02182b;
+  --wl-bg-deep: #010a16;
+  --wl-bg-surface: #0a192f;
+
+  /* WaveLength — surfaces */
+  --wl-panel: #04385a;
+  --wl-panel-deep: #071330;
+  --wl-panel-dark: #050e26;
+
+  /* WaveLength — water accents */
+  --wl-cyan: #22d3ee;
+  --wl-sky: #38bdf8;
+  --wl-teal: #17b6c4;
+  --wl-blue: #2f6fd8;
+
+  /* Secondary environmental accents */
+  --wl-indigo: #3d2fb0;
+  --wl-violet: #4a3cc9;
+  --wl-treasure: #f59e0b;
+
+  /* External brand colours */
+  --wl-spotify: #1ed760;
+
+  /* Compatibility */
+  --wl-accent: var(--wl-cyan);
 }
 
 html, body, #root {

@@ -165,45 +165,44 @@ export default function WeeklyChallengePanel({
     setResults(searchSpotifyCatalog(value));
   }
 
-  function submit() {
-    if (!pending) return;
+function submit() {
+  if (!pending) return;
 
-    const newId = `me-${Date.now()}`;
+  const newId = `me-${Date.now()}`;
 
-    mutate((data) => {
-      data.songs[newId] = {
-        id: newId,
-        title: pending.title,
-        artist: pending.artist,
-        cover: randomCover(pending.title + pending.artist),
-        ownerId: 'me',
-      };
+  mutate((data) => {
+    data.songs[newId] = {
+      id: newId,
+      title: pending.title,
+      artist: pending.artist,
+      cover: randomCover(pending.title + pending.artist),
+      ownerId: 'me',
+    };
 
-      data.floaterOrder.push(newId);
+    data.floaterOrder.push(newId);
 
-      data.challenge.mySubmission = {
-        songId: newId,
-      };
-    });
+    data.challenge.mySubmission = {
+      songId: newId,
+    };
+  });
 
-    setQuery('');
-    setResults([]);
-    setPending(null);
-  }
+  setQuery('');
+  setResults([]);
+  setPending(null);
+}
 
-  function toggleRelic(relic: CosmeticRelic) {
-    if (!relic.unlocked) return;
+function toggleRelic(relic: CosmeticRelic) {
+  if (!relic.unlocked) return;
 
-    mutate((data) => {
-      const currentActive = data.user?.activeCosmeticEffect;
-      data.user = {
-        ...data.user,
-        activeCosmeticEffect: currentActive === relic.id ? null : relic.id,
-      };
-    });
-  }
+  mutate((data) => {
+    const currentActive = data.me.activeCosmeticEffect;
 
-  const activeEffect = db.user?.activeCosmeticEffect;
+    data.me.activeCosmeticEffect =
+      currentActive === relic.id ? null : relic.id;
+  });
+}
+
+const activeEffect = db.me.activeCosmeticEffect;
 
   return (
     <NavPanel open={open} onClose={onClose} title="Weekly Challenge" wide>

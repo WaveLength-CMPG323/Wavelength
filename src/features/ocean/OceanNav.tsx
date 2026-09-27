@@ -12,6 +12,8 @@ import {
 
 import { useData } from '../../data/DataContext';
 import { useAuth } from '../../data/AuthContext';
+import { useWaveTransition } from '../../components/WaveTransitionProvider';
+import OceanButton from '../../components/OceanButton';
 
 interface Props {
   onSearch: (query: string) => void;
@@ -32,6 +34,7 @@ export default function OceanNav({
   const [isDiving, setIsDiving] = useState(false);
   const [isResurfacing, setIsResurfacing] = useState(false);
   const [splashKey, setSplashKey] = useState(0);
+  const { waveNavigate } = useWaveTransition();
 
   const prevChallengeOpen = useRef(isChallengeOpen);
 
@@ -124,23 +127,23 @@ export default function OceanNav({
         <div className="flex items-center">
           {isLoggedIn && (
             <nav className="flex items-center justify-center gap-2">
-              <Link
-                to="/chat"
+              <OceanButton
+                onClick={() => waveNavigate('/chat')}
                 aria-label="Chat"
                 className="
                   relative flex items-center gap-2
                   rounded-full px-3 py-2
                   text-sm font-medium text-cyan-100/80
-                  transition
                   hover:bg-cyan-500/10 hover:text-white
                 "
               >
                 <MessageCircle className="h-4 w-4 shrink-0" />
                 <span className="hidden xl:inline">Chat</span>
+
                 {db.hasChatDot && (
                   <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-cyan-400 ring-2 ring-[#071330]" />
                 )}
-              </Link>
+              </OceanButton>
 
               <button
                 type="button"

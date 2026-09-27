@@ -49,7 +49,7 @@ export default function SongDetailsPanel({
 
   // Read active cosmetic effect
   const activeEffect = isMe
-    ? db.user?.activeCosmeticEffect
+    ? db.me.activeCosmeticEffect
     : 'activeCosmeticEffect' in (owner || {})
     ? (owner as any)?.activeCosmeticEffect
     : null;

@@ -34,51 +34,155 @@ export default function CreateGroupPanel({
   }
 
   return (
-    <NavPanel open={open} onClose={onClose} title="Create Group">
-      <div className="flex flex-col gap-4 px-5 py-4">
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-cyan-300">Group name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Late Night Lo-fi"
-            className="w-full rounded-lg border border-cyan-500/20 bg-[#02182b] px-3 py-2 text-sm text-white placeholder:text-slate-500"
-          />
+  <NavPanel open={open} onClose={onClose} title="Create Group" wide>
+    <div className="flex flex-col gap-5 px-5 py-5">
+
+      {/* Group name */}
+      <div>
+        <label className="mb-2 block text-sm font-semibold text-cyan-100">
+          Group name
+        </label>
+
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Late Night Lo-fi"
+          maxLength={50}
+          className="
+            w-full rounded-xl
+            border border-cyan-400/20
+            bg-[#050e26]/70
+            px-4 py-3
+            text-sm text-white
+            outline-none
+            placeholder:text-cyan-200/30
+            transition
+            focus:border-cyan-400/50
+            focus:bg-[#050e26]/90
+          "
+        />
+      </div>
+
+      {/* Preset group picture */}
+      <div>
+        <div className="mb-2">
+          <p className="text-sm font-semibold text-cyan-100">
+            Group picture
+          </p>
+          <p className="mt-0.5 text-xs text-cyan-200/50">
+            Choose one of the WaveLength presets.
+          </p>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-cyan-300">Choose an icon</label>
-          <div className="flex gap-2">
-            {PREDEFINED_ICONS.map((opt) => (
+        <div className="flex flex-wrap gap-3">
+          {PREDEFINED_ICONS.map((opt) => {
+            const selected = icon === opt;
+
+            return (
               <button
                 key={opt}
                 onClick={() => setIcon(opt)}
                 type="button"
-                className={`h-12 w-12 overflow-hidden rounded-full ring-2 ${icon === opt ? 'ring-cyan-400' : 'ring-transparent'}`}
+                aria-label="Choose group picture"
+                className={`
+                  h-12 w-12 overflow-hidden rounded-full
+                  border transition
+                  ${
+                    selected
+                      ? 'border-cyan-300 ring-2 ring-cyan-400/40 shadow-[0_0_16px_rgba(34,211,238,0.25)]'
+                      : 'border-white/10 opacity-70 hover:border-cyan-400/40 hover:opacity-100'
+                  }
+                `}
               >
-                <img src={opt} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={opt}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-cyan-300">Add friends</label>
-          {friendIds.length === 0 && <p className="text-xs text-slate-500">No friends yet to add.</p>}
-          <div className="flex flex-col gap-1">
-            {friendIds.map((id) => (
-              <label key={id} className="flex items-center gap-2 text-sm text-slate-200">
-                <input type="checkbox" checked={members.includes(id)} onChange={() => toggleMember(id)} />
-                {db.users[id].name}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <button onClick={submit} type="button" className="rounded-full bg-[#1ED760] py-2.5 text-sm font-semibold text-black hover:bg-[#1fdf64]">
-          Create Group
-        </button>
       </div>
-    </NavPanel>
-  );
+
+      {/* Members */}
+      <div>
+        <div className="mb-2">
+          <p className="text-sm font-semibold text-cyan-100">
+            Add friends
+          </p>
+          <p className="mt-0.5 text-xs text-cyan-200/50">
+            Select the people you want in this group.
+          </p>
+        </div>
+
+        {friendIds.length === 0 ? (
+          <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-white/40">
+            No friends yet to add.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {friendIds.map((id) => {
+              const user = db.users[id];
+              const selected = members.includes(id);
+
+              return (
+                <label
+                  key={id}
+                  className={`
+                    flex cursor-pointer items-center gap-3
+                    rounded-xl border px-3 py-2.5
+                    transition
+                    ${
+                      selected
+                        ? 'border-cyan-400/30 bg-cyan-400/10'
+                        : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05]'
+                    }
+                  `}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => toggleMember(id)}
+                    className="accent-cyan-400"
+                  />
+
+                  <img
+                    src={user.pic}
+                    alt=""
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+
+                  <span className="text-sm text-white/85">
+                    {user.name}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Create */}
+      <button
+        onClick={submit}
+        type="button"
+        disabled={!name.trim()}
+        className="
+          rounded-full
+          bg-gradient-to-r from-blue-500 to-cyan-400
+          py-3
+          text-sm font-semibold text-white
+          shadow-[0_6px_20px_rgba(34,211,238,0.18)]
+          transition
+          hover:brightness-110
+          disabled:cursor-not-allowed
+          disabled:opacity-40
+        "
+      >
+        Create Group
+      </button>
+    </div>
+  </NavPanel>
+);
 }
