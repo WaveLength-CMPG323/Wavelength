@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useData } from '../../data/DataContext';
+import { useData } from '../../data/DataContext'; // gives the currnet message state
+import { useAuth } from '../../data/AuthContext'; // gives the logged in user id
+import { getSocket } from '../../lib/socket'; // gives the shared socket client 
 
 interface Props {
   threadId: string;
@@ -13,19 +15,44 @@ interface Props {
 }
 
 export default function Conversation({ threadId, title, icon, listeningSongTitle, onJoinListening, onMenuAction, menuLabel }: Props) {
-  const { db, sendMessage } = useData();
+  const { db } = useData();
   const [text, setText] = useState('');
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const messages = db.chats[threadId] || [];
+
+  const { profile } = useAuth();
+
+  // Join the private room for this conversation as soon as the active friend
+  // chat is open. The backend will reject the join unless there is an
+  // accepted request between the current user and this other user.
+  useEffect(() => {
+    if (!profile?.spotifyUserId || !threadId) return;
+
+    const socket = getSocket(profile.spotifyUserId);
+    socket.emit('private:join', { otherUserId: threadId });
+  }, [profile?.spotifyUserId, threadId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages.length]);
 
   function submit() {
-    if (!text.trim()) return;
-    sendMessage(threadId, text);
-    setText('');
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    // Use the real Socket.IO event for private chat. The backend validates
+    // the accepted-request rule before sending the message.
+    const socket = getSocket(profile?.spotifyUserId);
+
+  // Connect the socket to the logged-in Spotify account once the auth profile
+  // is loaded. The backend reads this id from socket.handshake.auth.userId so
+  // it can authorize private room access and identify the sender.
+    if (profile?.spotifyUserId) {
+      socket.emit('private:send', {
+        toUserId: threadId,
+        text: trimmed,
+      });
+    }
   }
 
   return (

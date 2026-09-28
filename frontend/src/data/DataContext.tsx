@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { AppState, ChatStatus } from './types';
 import * as api from './mockData';
+import { useAuth } from './AuthContext';
+import { getSocket } from '../lib/socket';
 
 interface DataContextValue {
   db: AppState;
@@ -9,7 +11,6 @@ interface DataContextValue {
   followUser: (userId: string, follow: boolean) => void;
   sendChatRequest: (userId: string) => void;
   resolveNotification: (id: string, status: 'accepted' | 'declined') => void;
-  sendMessage: (threadId: string, text: string) => void;
   unfriend: (userId: string) => void;
   createGroup: (name: string, icon: string, memberIds: string[]) => string;
   leaveGroup: (groupId: string) => void;
@@ -19,23 +20,59 @@ const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<AppState>(() => api.rolloverChallengeIfNeeded(api.load()));
+  const { profile } = useAuth();
 
-  // Stand-in for the Socket.IO context described in the spec: in the real
-  // app this effect would instead subscribe to socket events. Here it just
-  // re-reads localStorage periodically so multiple tabs/pages stay in sync.
-  useEffect(() => {
-    const id = setInterval(() => setDb(api.load()), 4000);
-    return () => clearInterval(id);
-  }, []);
 
-  const mutate = useCallback((fn: (draft: AppState) => void) => {
-    setDb((prev) => {
-      const draft = structuredClone(prev);
-      fn(draft);
-      api.save(draft);
-      return draft;
+const mutate = useCallback((fn: (draft: AppState) => void) => {
+  setDb((prev) => {
+    const draft = structuredClone(prev);
+    fn(draft);
+    api.save(draft);
+    return draft;
+  });
+}, []);
+  
+useEffect(() => {
+  // Wait until the signed-in user's Spotify ID is available.
+  if (!profile?.spotifyUserId) return;
+
+  // Get the socket connected with this user's identity.
+  const socket = getSocket(profile.spotifyUserId);
+
+  // Handle each private message received from the backend.
+  const handlePrivateMessage = (message: {
+    id?: string;
+    from: string;
+    to: string;
+    text: string;
+    ts: number;
+  }) => {
+    // Use the other participant's ID as the chat's thread key.
+    const threadId = message.from === profile.spotifyUserId ? message.to : message.from;
+
+    mutate((draft) => {
+      const existing = draft.chats[threadId] || [];
+
+      draft.chats[threadId] = [
+        ...existing,
+        {
+          from: message.from === profile.spotifyUserId ? 'me' : message.from,
+          text: message.text,
+          ts: message.ts,
+        },
+      ].sort((a, b) => a.ts - b.ts);
     });
-  }, []);
+  };
+
+  // Start listening for private messages.
+  socket.on('private:message', handlePrivateMessage);
+
+  return () => {
+    // Stop listening when this effect is cleaned up.
+    socket.off('private:message', handlePrivateMessage);
+  };
+}, [profile?.spotifyUserId, mutate]);
+
 
   const followUser = useCallback((userId: string, follow: boolean) => {
     mutate((d) => { d.users[userId].followedByMe = follow; });
@@ -57,14 +94,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         d.users[n.userId].chatStatus = 'friend';
         if (!d.chats[n.userId]) d.chats[n.userId] = [];
       }
-    });
-  }, [mutate]);
-
-  const sendMessage = useCallback((threadId: string, text: string) => {
-    if (!text.trim()) return;
-    mutate((d) => {
-      if (!d.chats[threadId]) d.chats[threadId] = [];
-      d.chats[threadId].push({ from: 'me', text: text.trim(), ts: Date.now() });
     });
   }, [mutate]);
 
@@ -93,7 +122,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [mutate]);
 
   return (
-    <DataContext.Provider value={{ db, mutate, followUser, sendChatRequest, resolveNotification, sendMessage, unfriend, createGroup, leaveGroup }}>
+    <DataContext.Provider value={{ db, mutate, followUser, sendChatRequest, resolveNotification, unfriend, createGroup, leaveGroup }}>
       {children}
     </DataContext.Provider>
   );

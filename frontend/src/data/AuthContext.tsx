@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { fetchMe, logout as apiLogout, spotifyLoginUrl } from '../lib/api';
+import { getSocket } from '../lib/socket';
 import type { SpotifyProfile } from './types';
 
 // Real Spotify auth, backed by the Express backend's session cookie (see
@@ -43,6 +44,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
+  // Connect the browser socket to the logged-in Spotify account once the auth
+  // profile is available. The backend reads socket.handshake.auth.userId to
+  // know which user is sending private chat events, and it uses that user id
+  // to check whether an accepted request exists before allowing room access.
+  // This is still a temporary because the live socket is used for
+  // real-time delivery, while persistent chat history is still handled later.
+    useEffect(() => {
+    if (!profile?.spotifyUserId) return;
+
+    const socket = getSocket(profile.spotifyUserId);
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [profile?.spotifyUserId]);
+
   const login = useCallback(() => {
     window.location.href = spotifyLoginUrl();
   }, []);
@@ -66,3 +83,5 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
   return ctx;
 }
+
+

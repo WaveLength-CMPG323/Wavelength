@@ -9,9 +9,26 @@ import { API_URL } from './api';
 // ocean, same as the backend's own /ocean test page.
 let socket: Socket | null = null;
 
-export function getSocket(): Socket {
+// Connect the browser to the Express/Socket.IO backend.
+// The backend uses socket.handshake.auth.userId to know which user is sending
+// private chat events. The backend then checks whether there is an accepted chat request before
+// allowing access to the private room
+// Once persistence is added, the socket will still be used for live
+// message delivery, but message history may move to a database-backed store.
+export function getSocket(userId?: string): Socket {
   if (!socket) {
-    socket = io(API_URL, { withCredentials: true });
+    socket = io(API_URL, {
+      withCredentials: true,
+      auth: userId ? { userId } : undefined,
+    });
   }
+
+  if (userId && (socket as any).auth?.userId !== userId) {
+    (socket as any).auth = { userId };
+    socket.disconnect();
+    socket.connect();
+  }
+
   return socket;
 }
+
