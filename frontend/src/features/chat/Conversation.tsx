@@ -12,9 +12,10 @@ interface Props {
   onJoinListening?: () => void;
   onMenuAction: () => void; // Unfriend or Leave group
   menuLabel: string;
+  isPrivateChat: boolean;
 }
 
-export default function Conversation({ threadId, title, icon, listeningSongTitle, onJoinListening, onMenuAction, menuLabel }: Props) {
+export default function Conversation({ threadId, title, icon, listeningSongTitle, onJoinListening, onMenuAction, menuLabel, isPrivateChat }: Props) {
   const { db } = useData();
   const [text, setText] = useState('');
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -22,21 +23,22 @@ export default function Conversation({ threadId, title, icon, listeningSongTitle
 
   const { profile } = useAuth();
 
-  // Join the private room for this conversation as soon as the active friend
-  // chat is open. The backend will reject the join unless there is an
-  // accepted request between the current user and this other user.
+  // Join a private room only for a one-to-one chat; groups use separate room logic.
+  // The backend also checks that the chat request between these users was accepted.
   useEffect(() => {
-    if (!profile?.spotifyUserId || !threadId) return;
+    if (!isPrivateChat || !profile?.spotifyUserId || !threadId) return;
 
     const socket = getSocket(profile.spotifyUserId);
     socket.emit('private:join', { otherUserId: threadId });
-  }, [profile?.spotifyUserId, threadId]);
+  }, [isPrivateChat, profile?.spotifyUserId, threadId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages.length]);
 
   function submit() {
+    if (!isPrivateChat || !profile?.spotifyUserId) return;
+
     const trimmed = text.trim();
     if (!trimmed) return;
 

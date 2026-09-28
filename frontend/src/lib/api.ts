@@ -3,7 +3,7 @@
 // cookie set by /auth/callback rides along - that cookie is how the
 // backend knows which Spotify account/session is asking. See socket.ts for
 // the companion Socket.IO connection used for live 'oceanUpdate' events.
-import type { ChatRequest, HostProfile, MyPlayback, PublicPlaylist, RecentTrack, SpotifyProfile } from '../data/types';
+import type { AcceptedChat, ChatRequest, HostProfile, MyPlayback, PublicPlaylist, RecentTrack, SpotifyProfile } from '../data/types';
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -123,6 +123,14 @@ export async function fetchIncomingChatRequests(): Promise<ChatRequest[]> {
   if (!res.ok) throw new Error(await errorFrom(res, 'Could not load notifications'));
   const body = await res.json();
   return body.requests;
+}
+
+// Fetches accepted chat partners for the current account.
+export async function fetchAcceptedChats(): Promise<AcceptedChat[]> {
+  const res = await apiFetch('/chat-requests/accepted');
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load accepted chats'));
+  const body = await res.json();
+  return body.chats;
 }
 
 export async function respondToChatRequest(id: string, accept: boolean): Promise<ChatRequest> {

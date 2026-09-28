@@ -85,4 +85,33 @@ function hasAcceptedPrivateChatRequest(userA, userB) {
   return false;
 }
 
-module.exports = { createRequest, getIncoming, respond, hasAcceptedPrivateChatRequest };
+function getAccepted(spotifyUserId) {
+  const acceptedByOtherUser = new Map();
+
+  for (const request of requests.values()) {
+    if (request.status !== 'accepted') continue;
+
+    const involvesUser =
+      request.fromSpotifyUserId === spotifyUserId ||
+      request.toSpotifyUserId === spotifyUserId;
+
+    if (!involvesUser) continue;
+
+    const otherUserId =
+      request.fromSpotifyUserId === spotifyUserId
+        ? request.toSpotifyUserId
+        : request.fromSpotifyUserId;
+
+    acceptedByOtherUser.set(otherUserId, request);
+  }
+
+  return Array.from(acceptedByOtherUser.values());
+}
+
+module.exports = {
+  createRequest,
+  getIncoming,
+  getAccepted,
+  respond,
+  hasAcceptedPrivateChatRequest,
+};

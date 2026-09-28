@@ -1,25 +1,51 @@
-import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import { useData } from '../../data/DataContext';
 import Conversation from './Conversation';
 import CreateGroupPanel from './CreateGroupPanel';
+import { fetchAcceptedChats } from '../../lib/api';
+import type { AcceptedChat } from '../../data/types';
 
 type Active = { type: 'friend' | 'group'; id: string } | null;
 
 export default function ChatPage() {
-  const { db, unfriend, leaveGroup } = useData();
-  const navigate = useNavigate();
+  const { db, leaveGroup } = useData();
   const [params] = useSearchParams();
   const withId = params.get('with');
 
   const [tab, setTab] = useState<'friends' | 'groups'>('friends');
-  const [active, setActive] = useState<Active>(
-    withId && db.users[withId]?.chatStatus === 'friend' ? { type: 'friend', id: withId } : null
-  );
+  const [active, setActive] = useState<Active>(null);
   const [groupPanelOpen, setGroupPanelOpen] = useState(false);
 
-  const friendIds = Object.keys(db.users).filter((id) => db.users[id].chatStatus === 'friend');
+  const [acceptedChats, setAcceptedChats] = useState<AcceptedChat[]>([]);
+  const [chatError, setChatError] = useState('');
+
+  async function loadAcceptedChats() {
+    try {
+      setAcceptedChats(await fetchAcceptedChats());
+      setChatError('');
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : 'Could not load chats');
+    }
+  }
+
+  useEffect(() => {
+    if (!withId) return;
+
+    const matchingChat = acceptedChats.find(
+      (chat) => chat.spotifyUserId === withId
+    );
+
+    if (matchingChat) {
+      setActive({ type: 'friend', id: matchingChat.spotifyUserId });
+    }
+  }, [withId, acceptedChats]);
+
+  useEffect(() => {
+  void loadAcceptedChats();
+  }, []);
+  
   const groupIds = Object.keys(db.groups);
 
   return (
@@ -47,22 +73,43 @@ export default function ChatPage() {
 
           <div className="flex-1 overflow-y-auto">
             {tab === 'friends' && (
-              friendIds.length === 0 ? (
-                <p className="p-4 text-xs text-slate-500">No chats yet — accept a request from Notifications.</p>
+              chatError ? (
+                <div className="p-4">
+                  <p className="text-xs text-red-400">{chatError}</p>
+                  <button
+                    onClick={() => void loadAcceptedChats()}
+                    type="button"
+                    className="mt-2 text-xs text-cyan-300 underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : acceptedChats.length === 0 ? (
+                <p className="p-4 text-xs text-slate-500">
+                  No chats yet — accept a request from Notifications.
+                </p>
               ) : (
-                friendIds.map((id) => {
-                  const user = db.users[id];
-                  const sub = user.listening && db.songs[user.listening] ? `🎧 ${db.songs[user.listening].title}` : 'Tap to chat';
+                acceptedChats.map((chat) => {
+                  const sub = 'Tap to chat';
+
                   return (
                     <button
-                      key={id}
-                      onClick={() => setActive({ type: 'friend', id })}
+                      key={chat.spotifyUserId}
+                      onClick={() => setActive({ type: 'friend', id: chat.spotifyUserId })}
                       type="button"
-                      className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-cyan-500/10 ${active?.id === id ? 'bg-cyan-500/10' : ''}`}
+                      className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-cyan-500/10 ${
+                        active?.id === chat.spotifyUserId ? 'bg-cyan-500/10' : ''
+                      }`}
                     >
-                      <img src={user.pic} alt={user.name} className="h-10 w-10 rounded-full object-cover" />
+                      <img
+                        src={chat.profileImage ?? '/avatars/avatar4.svg'}
+                        alt={chat.displayName}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
                       <span>
-                        <span className="block text-sm font-medium text-cyan-100">{user.name}</span>
+                        <span className="block text-sm font-medium text-cyan-100">
+                          {chat.displayName}
+                        </span>
                         <span className="block text-xs text-slate-400">{sub}</span>
                       </span>
                     </button>
@@ -70,6 +117,7 @@ export default function ChatPage() {
                 })
               )
             )}
+
 
             {tab === 'groups' && (
               <>
@@ -110,21 +158,20 @@ export default function ChatPage() {
           {!active && <div className="flex h-full items-center justify-center text-sm text-slate-500">Pick a conversation to get started</div>}
 
           {active?.type === 'friend' && (() => {
-            const user = db.users[active.id];
+            const chat = acceptedChats.find(
+              (item) => item.spotifyUserId === active.id
+            );
+
+            if (!chat) return null;
+
             return (
               <Conversation
-                threadId={user.id}
-                title={user.name}
-                icon={user.pic}
-                listeningSongTitle={user.listening ? db.songs[user.listening]?.title ?? null : null}
-                onJoinListening={() => navigate(`/?song=${user.listening}`)}
-                menuLabel="Unfriend"
-                onMenuAction={() => {
-                  if (confirm(`Unfriend and delete this chat with ${user.name}? This will also unfollow them.`)) {
-                    unfriend(user.id);
-                    setActive(null);
-                  }
-                }}
+                isPrivateChat={true}
+                threadId={chat.spotifyUserId}
+                title={chat.displayName}
+                icon={chat.profileImage ?? '/avatars/avatar4.svg'}
+                menuLabel="Close chat"
+                onMenuAction={() => setActive(null)}
               />
             );
           })()}
@@ -133,6 +180,7 @@ export default function ChatPage() {
             const group = db.groups[active.id];
             return (
               <Conversation
+                isPrivateChat={false}
                 threadId={group.id}
                 title={group.name}
                 icon={group.icon}

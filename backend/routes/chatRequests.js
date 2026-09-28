@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-const { getTokens } = require('../db/tokenStore');
+const { getTokens, getTokensBySpotifyUserId } = require('../db/tokenStore');
 const chatRequests = require('../lib/chatRequests');
 
-// All three routes below need to know the REAL Spotify account behind
+// All routes below need to know the REAL Spotify account behind
 // this session (not just the session id) - chat requests are addressed
 // to accounts, not sessions, so they survive the recipient logging out
 // and back in. This is just a lookup, not a live Spotify API call, so it
@@ -53,6 +53,39 @@ router.get('/incoming', async (req, res) => {
     return res.json({ requests: [] }); // not logged in - nothing to show, not an error
   }
   res.json({ requests: chatRequests.getIncoming(me.spotifyUserId) });
+});
+
+// GET /chat-requests/accepted - accepted chat partners for the current account.
+router.get('/accepted', async (req, res) => {
+  const me = await getMySpotifyIdentity(req);
+  if (!me) {
+    return res.status(401).json({ error: 'You need to log in first' });
+  }
+
+  try {
+    const requests = chatRequests.getAccepted(me.spotifyUserId);
+    const chats = await Promise.all(
+      requests.map(async (request) => {
+        const spotifyUserId =
+          request.fromSpotifyUserId === me.spotifyUserId
+            ? request.toSpotifyUserId
+            : request.fromSpotifyUserId;
+
+        const profile = await getTokensBySpotifyUserId(spotifyUserId);
+
+        return {
+          spotifyUserId,
+          displayName: profile?.displayName || spotifyUserId,
+          profileImage: profile?.profileImage || null,
+        };
+      })
+    );
+
+    res.json({ chats });
+  } catch (error) {
+    console.error('Could not load accepted chats:', error);
+    res.status(500).json({ error: 'Could not load accepted chats' });
+  }
 });
 
 // POST /chat-requests/:id/accept and /decline

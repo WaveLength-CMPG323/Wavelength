@@ -155,6 +155,14 @@ export interface ChatRequest {
   createdAt: number;
 }
 
+// GET /chat-requests/accepted - one accepted private-chat partner,
+// with the Spotify ID and profile details needed to show them in the chat list.
+export interface AcceptedChat {
+  spotifyUserId: string;
+  displayName: string;
+  profileImage: string | null;
+}
+
 // GET /spotify/recently-played
 export interface RecentTrack {
   trackId: string;
