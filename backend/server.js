@@ -43,6 +43,105 @@ const io = new Server(httpServer, {
   cors: { origin: FRONTEND_ORIGIN, credentials: true },
 });
 
+// TEMPORARY PRIVATE CHAT FLOW:
+//
+// This server-side logic is using the accepted request as the access check
+// for a live 1:1 room. That means:
+// - if there is an accepted request, users may join the room
+// - if there is no accepted request, they cannot send or receive messages
+//
+// This is intentionally not the final chat architecture.
+// The final system will likely include:
+// - persistent conversations
+// - persistent message storage
+// - database-backed room or conversation records
+//
+// For now, this is only a live room permission layer for prototype chat.
+
+// We use the temporary hasAcceptedPrivateChatRequest() function from
+// chatRequests.js, which checks whether an accepted request exists between
+// two users in either direction.
+const { hasAcceptedPrivateChatRequest } = require('./lib/chatRequests');
+
+// A private chat room is shared by exactly two users.
+// We sort the two user IDs so the room name is always the same, no matter
+// which user started the chat first.
+function getPrivateRoomId(userA, userB) {
+  return [userA, userB].sort().join(':');
+}
+
+// Only allow a private chat when there is an accepted request between the two users.
+function canOpenPrivateChat(me, otherUserId) {
+  return hasAcceptedPrivateChatRequest(me, otherUserId);
+}
+
+// This runs every time a browser connects to the Socket.IO server.
+io.on('connection', (socket) => {
+  // The frontend sends the logged-in user's Spotify ID when the socket connects.
+  // We use it to know who is sending the message and who they are chatting with.
+  const currentUserId = socket.handshake.auth?.userId;
+
+  if (!currentUserId) {
+    console.log('Socket connected without userId');
+    return;
+  }
+
+// NOTE:
+// We check the accepted request each time before joining or sending.
+// In a database-backed version, this may be replaced by a lookup against
+// a persisted conversation or permission record, but the real-time socket flow
+// itself should stay the same.
+
+  // When a user opens a private chat, we put them into a room for that 1:1 chat.
+  socket.on('private:join', ({ otherUserId }) => {
+    // The other user must exist before we can open a private room.
+    if (!currentUserId || !otherUserId) return;
+
+    // Only accepted chats are allowed.
+    const allowed = canOpenPrivateChat(currentUserId, otherUserId);
+    if (!allowed) return;
+
+    // Create the same room name for both users.
+    const roomId = getPrivateRoomId(currentUserId, otherUserId);
+
+    // Join the private room so this user can receive messages for that chat.
+    socket.join(roomId);
+  });
+
+
+  // This event is called when the user sends a message in a private chat.
+  socket.on('private:send', ({ toUserId, text }) => {
+    // Check that the sender, recipient, and message text all exist and are valid.
+    if (!currentUserId || !toUserId || !text || !text.trim()) return;
+
+    // Only allow sending if there is an accepted private chat request between them.
+    const allowed = canOpenPrivateChat(currentUserId, toUserId);
+    if (!allowed) return;
+
+    // Build the same private room name so both users receive the same message.
+    const roomId = getPrivateRoomId(currentUserId, toUserId);
+
+    // Create the message payload that gets sent to both users in the room.
+    const message = {
+      id: Date.now().toString(),
+      from: currentUserId,
+      to: toUserId,
+      text: text.trim(),
+      ts: Date.now(),
+    };
+
+    // Send the message to everyone in the private room.
+    io.to(roomId).emit('private:message', message);
+  });
+});
+
+// GROUP CHAT IS DEFERRED.
+// This is intentionally not using the same pattern as the private 1:1 chat.
+// Private chat uses a user-pair room based on request acceptance.
+// Group chat will likely use a separate group_id-based room model.
+// The final database version should store groups and memberships separately,
+// instead of reusing the request system.
+
 app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
 app.use(cookieParser());
 app.use(express.json()); // needed for POST /spotify/join's JSON body

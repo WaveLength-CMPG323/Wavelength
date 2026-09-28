@@ -56,4 +56,33 @@ function respond(id, spotifyUserId, accept) {
   return r;
 }
 
-module.exports = { createRequest, getIncoming, respond };
+// IMPORTANT: this is not a chat record and it is not the final database model.
+// It is only a temporary permission check for the live private chat room.
+//
+// TEMPORARY RULE:
+// If an accepted request exists between these two users in either direction,
+// allow the private Socket.IOroom to open.
+//
+// This is a permission gate for live chat access, not a conversation history.
+//
+// FUTURE DATABASE VERSION:
+// When chat persistence is added, the real source of truth may become:
+// - a persisted conversation record, or
+// - a persisted acceptance record linked to a conversation table
+//
+// For now, the request status is being used as the gate because the app has
+// no database-backed messages or chat rooms yet.
+function hasAcceptedPrivateChatRequest(userA, userB) {
+  for (const request of requests.values()) {
+    const aToB = request.fromSpotifyUserId === userA && request.toSpotifyUserId === userB;
+    const bToA = request.fromSpotifyUserId === userB && request.toSpotifyUserId === userA;
+
+    if ((aToB || bToA) && request.status === 'accepted') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+module.exports = { createRequest, getIncoming, respond, hasAcceptedPrivateChatRequest };
