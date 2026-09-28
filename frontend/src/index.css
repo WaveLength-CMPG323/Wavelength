@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* WaveLength deep-ocean theme. These are the only hand-picked colors used
+   across the app -- everything else composes from Tailwind's cyan/slate
+   scale so the product reads as one consistent thing. */
+:root {
+  --wl-bg: #02182b;      /* page shell */
+  --wl-panel: #04385a;   /* cards / panels */
+  --wl-accent: #1ED760;  /* Spotify green, primary CTA */
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--wl-bg);
+  color: #f1f5f9;
+}
+
+/* Hides the scrollbar's visible track/thumb while leaving the element
+   scrollable (mouse wheel, touch, keyboard) - used on panels like the
+   ocean song panel, where a visible scrollbar looked messy against the
+   rounded card even when there was barely anything to scroll. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, new Edge */
+}
