@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useData } from '../../data/DataContext'; // gives the currnet message state
 import { useAuth } from '../../data/AuthContext'; // gives the logged in user id
 import { getSocket } from '../../lib/socket'; // gives the shared socket client 
+import { fetchGroupChatHistory, fetchPrivateChatHistory } from '../../lib/api';
+import type { ChatMessage } from '../../data/types';
 
 interface Props {
   threadId: string;
@@ -13,11 +15,11 @@ interface Props {
   onMenuAction: () => void; // Unfriend or Leave group
   menuLabel: string;
   isPrivateChat: boolean;
-  memberNames?: Record<string, string>;
+  senderProfiles?: Record<string, { displayName: string; profileImage: string | null }>;
 }
 
-export default function Conversation({ threadId, title, icon, listeningSongTitle, onJoinListening, onMenuAction, menuLabel, isPrivateChat, memberNames = {} }: Props) {
-  const { db } = useData();
+export default function Conversation({ threadId, title, icon, listeningSongTitle, onJoinListening, onMenuAction, menuLabel, isPrivateChat, senderProfiles = {} }: Props) {
+  const { db, mutate } = useData();
   const [text, setText] = useState('');
   const [groupReady, setGroupReady] = useState(false);
   const [sendError, setSendError] = useState('');
@@ -25,6 +27,38 @@ export default function Conversation({ threadId, title, icon, listeningSongTitle
   const messages = db.chats[threadId] || [];
 
   const { profile } = useAuth();
+
+  useEffect(() => {
+    if (!profile?.spotifyUserId || !threadId) return;
+    let cancelled = false;
+    setSendError('');
+
+    const loadHistory = isPrivateChat
+      ? fetchPrivateChatHistory(threadId)
+      : fetchGroupChatHistory(threadId);
+
+    loadHistory.then((history) => {
+      if (cancelled) return;
+      mutate((draft) => {
+        const merged = new Map<string, ChatMessage>();
+        for (const message of history) {
+          if (!message.id) continue;
+          merged.set(message.id, {
+            ...message,
+            from: message.from === profile.spotifyUserId ? 'me' : message.from,
+          });
+        }
+        for (const message of draft.chats[threadId] || []) {
+          if (message.id) merged.set(message.id, message);
+        }
+        draft.chats[threadId] = Array.from(merged.values()).sort((a, b) => a.ts - b.ts);
+      });
+    }).catch((error) => {
+      if (!cancelled) setSendError(error instanceof Error ? error.message : 'Could not load chat history');
+    });
+
+    return () => { cancelled = true; };
+  }, [isPrivateChat, profile?.spotifyUserId, threadId, mutate]);
 
   useEffect(() => {
     if (!profile?.spotifyUserId || !threadId) return;
@@ -72,12 +106,17 @@ export default function Conversation({ threadId, title, icon, listeningSongTitle
     const socket = getSocket();
 
     if (isPrivateChat) {
-      // Private messages still use the accepted-request-gated event.
       socket.emit('private:send', {
         toUserId: threadId,
         text: trimmed,
+      }, (result: { ok: boolean; error?: string }) => {
+        if (!result.ok) {
+          setSendError(result.error || 'Could not send private message');
+          return;
+        }
+        setSendError('');
+        setText('');
       });
-      setText('');
       return;
     }
 
@@ -116,19 +155,38 @@ export default function Conversation({ threadId, title, icon, listeningSongTitle
 
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
         {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${m.from === 'me' ? 'ml-auto bg-[#1ED760] text-black' : 'bg-white/10 text-slate-100'}`}
-          >
-            {!isPrivateChat && (
-              <span className="mb-1 block text-xs opacity-70">
-                {m.from === 'me' ? 'You' : memberNames[m.from] ?? m.from}
-              </span>
+          <div key={i} className={`flex items-end gap-2 ${m.from === 'me' ? 'justify-end' : 'justify-start'}`}>
+            {m.from !== 'me' && (
+              <img
+                src={senderProfiles[m.from]?.profileImage ?? '/avatars/avatar4.svg'}
+                alt=""
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
+              />
             )}
-            <span className="block">{m.text}</span>
-            <time className="mt-1 block text-right text-[10px] opacity-60">
-              {new Date(m.ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-            </time>
+            <div className="max-w-[75%]">
+              <span className={`mb-1 block text-xs text-slate-400 ${m.from === 'me' ? 'text-right' : ''}`}>
+                {m.from === 'me' ? profile?.displayName ?? 'You' : senderProfiles[m.from]?.displayName ?? m.from}
+              </span>
+              <div className={`rounded-2xl px-3 py-2 text-sm ${m.from === 'me' ? 'bg-[#1ED760] text-black' : 'bg-white/10 text-slate-100'}`}>
+                <span className="block">{m.text}</span>
+                <time dateTime={new Date(m.ts).toISOString()} className="mt-1 block text-right text-[10px] opacity-60">
+                  {new Date(m.ts).toLocaleString([], {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </time>
+              </div>
+            </div>
+            {m.from === 'me' && (
+              <img
+                src={profile?.profileImage ?? '/avatars/avatar4.svg'}
+                alt=""
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
+              />
+            )}
           </div>
         ))}
       </div>

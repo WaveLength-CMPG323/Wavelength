@@ -12,6 +12,7 @@ const spotifyRouter = require('./routes/spotify');
 const chatRequestsRouter = require('./routes/chatRequests');
 const groupsRouter = require('./routes/groups');
 const { getTokens, useMemoryStore } = require('./db/tokenStore');
+const chatHistory = require('./db/chatHistory');
 const { startOceanPoller } = require('./lib/spotifyPoller');
 const groupStore = require('./lib/groupStore');
 
@@ -73,7 +74,7 @@ function getPrivateRoomId(userA, userB) {
 }
 
 // Only allow a private chat when there is an accepted request between the two users.
-function canOpenPrivateChat(me, otherUserId) {
+async function canOpenPrivateChat(me, otherUserId) {
   return hasAcceptedPrivateChatRequest(me, otherUserId);
 }
 
@@ -99,60 +100,71 @@ io.on('connection', (socket) => {
 // itself should stay the same.
 
   // When a user opens a private chat, we put them into a room for that 1:1 chat.
-  socket.on('private:join', ({ otherUserId }) => {
-    // The other user must exist before we can open a private room.
-    if (!currentUserId || !otherUserId) return;
+  socket.on('private:join', async ({ otherUserId } = {}, acknowledge) => {
+    if (!currentUserId || !otherUserId) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Chat partner is required' });
+      return;
+    }
 
-    // Only accepted chats are allowed.
-    const allowed = canOpenPrivateChat(currentUserId, otherUserId);
-    if (!allowed) return;
-
-    // Create the same room name for both users.
-    const roomId = getPrivateRoomId(currentUserId, otherUserId);
-
-    // Join the private room so this user can receive messages for that chat.
-    socket.join(roomId);
+    try {
+      if (!(await canOpenPrivateChat(currentUserId, otherUserId))) {
+        if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'You do not have an accepted chat with this user' });
+        return;
+      }
+      socket.join(getPrivateRoomId(currentUserId, otherUserId));
+      if (typeof acknowledge === 'function') acknowledge({ ok: true });
+    } catch (error) {
+      console.error('Could not join private chat:', error.message);
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Could not join private chat' });
+    }
   });
 
 
   // This event is called when the user sends a message in a private chat.
-  socket.on('private:send', ({ toUserId, text }) => {
-    // Check that the sender, recipient, and message text all exist and are valid.
-    if (!currentUserId || !toUserId || !text || !text.trim()) return;
+  socket.on('private:send', async ({ toUserId, text } = {}, acknowledge) => {
+    const trimmedText = typeof text === 'string' ? text.trim() : '';
+    if (!currentUserId || !toUserId || !trimmedText) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Chat partner and message text are required' });
+      return;
+    }
+    if (trimmedText.length > 4000) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Messages must be 4000 characters or fewer' });
+      return;
+    }
 
-    // Only allow sending if there is an accepted private chat request between them.
-    const allowed = canOpenPrivateChat(currentUserId, toUserId);
-    if (!allowed) return;
-
-    // Build the same private room name so both users receive the same message.
-    const roomId = getPrivateRoomId(currentUserId, toUserId);
-
-    // Create the message payload that gets sent to both users in the room.
-    const message = {
-      id: Date.now().toString(),
-      from: currentUserId,
-      to: toUserId,
-      text: text.trim(),
-      ts: Date.now(),
-    };
-
-    // Send the message to everyone in the private room.
-    io.to(roomId).emit('private:message', message);
+    try {
+      if (!(await canOpenPrivateChat(currentUserId, toUserId))) {
+        if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'You do not have an accepted chat with this user' });
+        return;
+      }
+      const message = await chatHistory.savePrivateMessage(currentUserId, toUserId, trimmedText);
+      const roomId = getPrivateRoomId(currentUserId, toUserId);
+      socket.join(roomId);
+      io.to(roomId).emit('private:message', message);
+      if (typeof acknowledge === 'function') acknowledge({ ok: true, messageId: message.id });
+    } catch (error) {
+      console.error('Could not save private message:', error.message);
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Could not send private message' });
+    }
   });
 
   // Group rooms use group IDs and current membership, not private-chat requests.
-  socket.on('group:join', ({ groupId } = {}, acknowledge) => {
+  socket.on('group:join', async ({ groupId } = {}, acknowledge) => {
     if (!groupId) {
       if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Group ID is required' });
       return;
     }
-    if (!groupStore.isMember(groupId, currentUserId)) {
-      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'You are not a member of this group' });
-      return;
+    try {
+      if (!(await groupStore.isMember(groupId, currentUserId))) {
+        if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'You are not a member of this group' });
+        return;
+      }
+      socket.join(getGroupRoomId(groupId));
+      if (typeof acknowledge === 'function') acknowledge({ ok: true });
+    } catch (error) {
+      console.error('Could not join group chat:', error.message);
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Could not join this group' });
     }
-
-    socket.join(getGroupRoomId(groupId));
-    if (typeof acknowledge === 'function') acknowledge({ ok: true });
   });
 
   socket.on('group:leave', ({ groupId } = {}, acknowledge) => {
@@ -175,7 +187,15 @@ io.on('connection', (socket) => {
       if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Messages must be 4000 characters or fewer' });
       return;
     }
-    if (!groupStore.isMember(groupId, currentUserId)) {
+    let senderIsMember;
+    try {
+      senderIsMember = await groupStore.isMember(groupId, currentUserId);
+    } catch (error) {
+      console.error('Could not verify group membership:', error.message);
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Could not verify group membership' });
+      return;
+    }
+    if (!senderIsMember) {
       if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'You are not a member of this group' });
       return;
     }
@@ -186,20 +206,13 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const message = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      groupId,
-      from: currentUserId,
-      text: trimmedText,
-      ts: Date.now(),
-    };
-
     // Recheck membership when broadcasting so a removed member with an old
     // room connection no longer receives new messages.
     try {
+      const message = await chatHistory.saveGroupMessage(groupId, currentUserId, trimmedText);
       const roomSockets = await io.in(roomId).fetchSockets();
       for (const roomSocket of roomSockets) {
-        if (groupStore.isMember(groupId, roomSocket.data.spotifyUserId)) {
+        if (await groupStore.isMember(groupId, roomSocket.data.spotifyUserId)) {
           roomSocket.emit('group:message', message);
         }
       }

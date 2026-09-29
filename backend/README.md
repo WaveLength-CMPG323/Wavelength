@@ -19,9 +19,10 @@ Then fill in `.env`:
 - `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` — from your app in the
   [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
 - `SPOTIFY_REDIRECT_URI` — must exactly match a Redirect URI registered
-  in that dashboard. Use `http://localhost:3000/auth/callback` for now.
+  in that dashboard. Use `http://127.0.0.1:3000/auth/callback` for now.
 - `FRONTEND_URL` — wherever your frontend runs locally (e.g. Vite's
-  default `http://localhost:5173`).
+  default `http://127.0.0.1:5173`). Keep the host as `127.0.0.1` for
+  both URLs so the browser sends the session cookie correctly.
 - `DATABASE_URL` — leave this line out entirely (or comment it with a
   leading `#`) until your real Postgres connection string is ready.
   If it's set to anything — even the placeholder value — the app will
@@ -37,7 +38,7 @@ In the Spotify Developer Dashboard, open your app → Settings →
 Redirect URIs, and add:
 
 ```
-http://localhost:3000/auth/callback
+http://127.0.0.1:3000/auth/callback
 ```
 
 You can add multiple URIs, so later you'll also add your Render
@@ -77,26 +78,30 @@ ALTER TABLE spotify_tokens ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE spotify_tokens ADD COLUMN IF NOT EXISTS profile_image TEXT;
 ```
 
-Run this once against your hosted Postgres instance, then set
-`DATABASE_URL` in `.env`. Restart the server — the console log will
-stop warning about in-memory storage.
+Run this once against your hosted Postgres instance.
 
-## 5. Run it
+## 5. Create chat history tables
+
+Run `db/chat-schema.sql` in the Supabase SQL Editor. This creates the
+private-chat, group, membership, request, and message tables used by the
+backend. Then set `DATABASE_URL` in `.env` and restart the server.
+
+## 6. Run it
 
 ```bash
 npm start
 ```
 
-Then visit `http://localhost:3000/auth/login` in a browser. It should
+Then visit `http://127.0.0.1:3000/auth/login` in a browser. It should
 redirect you to Spotify, ask you to approve access, then bounce back
-to `FRONTEND_URL/dashboard` (that frontend route doesn't need to exist
-yet — you're just confirming the redirect happens without errors).
+to the frontend root at `FRONTEND_URL/` (you're just confirming the
+redirect happens without errors).
 
 Check your server logs / DB for the saved tokens to confirm it worked.
 
-## 6. Give Ocean their endpoint
+## 7. Give Ocean their endpoint
 
-Once login works, `GET http://localhost:3000/spotify/currently-playing`
+Once login works, `GET http://127.0.0.1:3000/spotify/currently-playing`
 returns:
 
 ```json

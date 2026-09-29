@@ -5,6 +5,7 @@
 // the companion Socket.IO connection used for live 'oceanUpdate' events.
 import type {
   AcceptedChat,
+  ChatMessage,
   ChatRequest,
   GroupJoinRequest,
   HostProfile,
@@ -142,6 +143,21 @@ export async function fetchAcceptedChats(): Promise<AcceptedChat[]> {
   if (!res.ok) throw new Error(await errorFrom(res, 'Could not load accepted chats'));
   const body = await res.json();
   return body.chats;
+}
+
+export async function fetchPrivateChatHistory(otherUserId: string): Promise<ChatMessage[]> {
+  const path = `/chat-requests/${encodeURIComponent(otherUserId)}/messages`;
+  const res = await apiFetch(path);
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load private chat history'));
+  const body = await res.json();
+  return body.messages;
+}
+
+export async function fetchGroupChatHistory(groupId: string): Promise<ChatMessage[]> {
+  const res = await apiFetch(`/groups/${encodeURIComponent(groupId)}/messages`);
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load group chat history'));
+  const body = await res.json();
+  return body.messages;
 }
 
 export async function respondToChatRequest(id: string, accept: boolean): Promise<ChatRequest> {

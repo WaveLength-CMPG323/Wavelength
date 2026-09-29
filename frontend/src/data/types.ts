@@ -37,6 +37,7 @@ export interface Me {
 }
 
 export interface ChatMessage {
+  id?: string;
   from: string; // 'me' | userId
   text: string;
   ts: number;

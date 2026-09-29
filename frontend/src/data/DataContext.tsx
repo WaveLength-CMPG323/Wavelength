@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import type { AppState, ChatStatus } from './types';
+import type { AppState, ChatMessage, ChatStatus } from './types';
 import * as api from './mockData';
 import { useAuth } from './AuthContext';
 import { getSocket } from '../lib/socket';
@@ -17,6 +17,13 @@ interface DataContextValue {
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
+
+function appendMessage(draft: AppState, threadId: string, message: ChatMessage) {
+  const existing = draft.chats[threadId] || [];
+  if (message.id && existing.some((item) => item.id === message.id)) return;
+
+  draft.chats[threadId] = [...existing, message].sort((a, b) => a.ts - b.ts);
+}
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<AppState>(() => api.rolloverChallengeIfNeeded(api.load()));
@@ -51,16 +58,12 @@ useEffect(() => {
     const threadId = message.from === profile.spotifyUserId ? message.to : message.from;
 
     mutate((draft) => {
-      const existing = draft.chats[threadId] || [];
-
-      draft.chats[threadId] = [
-        ...existing,
-        {
-          from: message.from === profile.spotifyUserId ? 'me' : message.from,
-          text: message.text,
-          ts: message.ts,
-        },
-      ].sort((a, b) => a.ts - b.ts);
+      appendMessage(draft, threadId, {
+        id: message.id,
+        from: message.from === profile.spotifyUserId ? 'me' : message.from,
+        text: message.text,
+        ts: message.ts,
+      });
     });
   };
 
@@ -73,15 +76,12 @@ useEffect(() => {
   }) => {
     // Store group messages under the group ID so Conversation can reuse its existing message list.
     mutate((draft) => {
-      const existing = draft.chats[message.groupId] || [];
-      draft.chats[message.groupId] = [
-        ...existing,
-        {
-          from: message.from === profile.spotifyUserId ? 'me' : message.from,
-          text: message.text,
-          ts: message.ts,
-        },
-      ].sort((a, b) => a.ts - b.ts);
+      appendMessage(draft, message.groupId, {
+        id: message.id,
+        from: message.from === profile.spotifyUserId ? 'me' : message.from,
+        text: message.text,
+        ts: message.ts,
+      });
     });
   };
 

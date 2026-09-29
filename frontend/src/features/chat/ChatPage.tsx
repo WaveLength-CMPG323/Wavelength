@@ -368,6 +368,12 @@ export default function ChatPage() {
                 threadId={chat.spotifyUserId}
                 title={chat.displayName}
                 icon={chat.profileImage ?? '/avatars/avatar4.svg'}
+                senderProfiles={{
+                  [chat.spotifyUserId]: {
+                    displayName: chat.displayName,
+                    profileImage: chat.profileImage,
+                  },
+                }}
                 menuLabel="Close chat"
                 onMenuAction={() => setActive(null)}
               />
@@ -437,7 +443,10 @@ export default function ChatPage() {
                     threadId={group.id}
                     title={group.name}
                     icon={group.icon ?? '/avatars/avatar4.svg'}
-                    memberNames={Object.fromEntries(group.members.map((member) => [member.spotifyUserId, member.displayName]))}
+                    senderProfiles={Object.fromEntries(group.members.map((member) => [
+                      member.spotifyUserId,
+                      { displayName: member.displayName, profileImage: member.profileImage },
+                    ]))}
                     menuLabel={group.ownerSpotifyUserId === profile?.spotifyUserId ? 'Close group' : 'Leave group'}
                     onMenuAction={() => void handleLeaveGroup(group)}
                   />

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const { getTokens, getTokensBySpotifyUserId } = require('../db/tokenStore');
+const chatHistory = require('../db/chatHistory');
 const chatRequests = require('../lib/chatRequests');
 
 // All routes below need to know the REAL Spotify account behind
@@ -36,7 +37,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: "You can't request a chat with yourself" });
   }
 
-  const request = chatRequests.createRequest({
+  const request = await chatRequests.createRequest({
     fromSpotifyUserId: me.spotifyUserId,
     fromDisplayName: me.displayName,
     fromProfileImage: me.profileImage,
@@ -52,7 +53,21 @@ router.get('/incoming', async (req, res) => {
   if (!me) {
     return res.json({ requests: [] }); // not logged in - nothing to show, not an error
   }
-  res.json({ requests: chatRequests.getIncoming(me.spotifyUserId) });
+  try {
+    const incoming = await chatRequests.getIncoming(me.spotifyUserId);
+    const requests = await Promise.all(incoming.map(async (request) => {
+      const profile = await getTokensBySpotifyUserId(request.fromSpotifyUserId);
+      return {
+        ...request,
+        fromDisplayName: profile?.displayName || request.fromSpotifyUserId,
+        fromProfileImage: profile?.profileImage || null,
+      };
+    }));
+    res.json({ requests });
+  } catch (error) {
+    console.error('Could not load incoming chat requests:', error);
+    res.status(500).json({ error: 'Could not load notifications' });
+  }
 });
 
 // GET /chat-requests/accepted - accepted chat partners for the current account.
@@ -63,7 +78,7 @@ router.get('/accepted', async (req, res) => {
   }
 
   try {
-    const requests = chatRequests.getAccepted(me.spotifyUserId);
+    const requests = await chatRequests.getAccepted(me.spotifyUserId);
     const chats = await Promise.all(
       requests.map(async (request) => {
         const spotifyUserId =
@@ -94,7 +109,7 @@ async function respondToRequest(req, res, accept) {
   if (!me) {
     return res.status(401).json({ error: 'You need to log in first' });
   }
-  const request = chatRequests.respond(req.params.id, me.spotifyUserId, accept);
+  const request = await chatRequests.respond(req.params.id, me.spotifyUserId, accept);
   if (!request) {
     return res.status(404).json({ error: 'That request is no longer pending' });
   }
@@ -103,5 +118,23 @@ async function respondToRequest(req, res, accept) {
 
 router.post('/:id/accept', (req, res) => respondToRequest(req, res, true));
 router.post('/:id/decline', (req, res) => respondToRequest(req, res, false));
+
+router.get('/:otherUserId/messages', async (req, res) => {
+  const me = await getMySpotifyIdentity(req);
+  if (!me) return res.status(401).json({ error: 'You need to log in first' });
+
+  try {
+    const otherUserId = req.params.otherUserId;
+    if (!(await chatRequests.hasAcceptedPrivateChatRequest(me.spotifyUserId, otherUserId))) {
+      return res.status(403).json({ error: 'You do not have an accepted chat with this user' });
+    }
+
+    const messages = await chatHistory.getPrivateMessages(me.spotifyUserId, otherUserId);
+    res.json({ messages });
+  } catch (error) {
+    console.error('Could not load private chat history:', error);
+    res.status(500).json({ error: 'Could not load private chat history' });
+  }
+});
 
 module.exports = router;

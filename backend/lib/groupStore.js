@@ -1,4 +1,6 @@
 const { randomUUID } = require('node:crypto');
+const { useMemoryStore } = require('../db/tokenStore');
+const postgresGroupStore = require('../db/groupStore');
 
 // Temporary storage for group data. Replace this module's operations with
 // database queries when group tables are available; the API and socket layers
@@ -31,7 +33,7 @@ function canManageMembers(group, spotifyUserId) {
   return role === 'owner' || role === 'moderator';
 }
 
-function createGroup({
+async function createGroup({
   name,
   description = null,
   icon = null,
@@ -39,6 +41,17 @@ function createGroup({
   ownerSpotifyUserId,
   memberSpotifyUserIds = [],
 }) {
+  if (!useMemoryStore) {
+    return postgresGroupStore.createGroup({
+      name,
+      description,
+      icon,
+      visibility,
+      ownerSpotifyUserId,
+      memberSpotifyUserIds,
+    });
+  }
+
   const trimmedName = typeof name === 'string' ? name.trim() : '';
   if (!trimmedName) throw new Error('Group name is required');
   if (!ownerSpotifyUserId) throw new Error('Group owner is required');
@@ -68,28 +81,33 @@ function createGroup({
   return snapshot(group);
 }
 
-function getGroup(groupId) {
+async function getGroup(groupId) {
+  if (!useMemoryStore) return postgresGroupStore.getGroup(groupId);
   const group = groups.get(groupId);
   return group ? snapshot(group) : null;
 }
 
-function getPublicGroups() {
+async function getPublicGroups() {
+  if (!useMemoryStore) return postgresGroupStore.getPublicGroups();
   return Array.from(groups.values())
     .filter((group) => group.visibility === 'public')
     .map(snapshot);
 }
 
-function getGroupsForMember(spotifyUserId) {
+async function getGroupsForMember(spotifyUserId) {
+  if (!useMemoryStore) return postgresGroupStore.getGroupsForMember(spotifyUserId);
   return Array.from(groups.values())
     .filter((group) => group.members.has(spotifyUserId))
     .map(snapshot);
 }
 
-function isMember(groupId, spotifyUserId) {
+async function isMember(groupId, spotifyUserId) {
+  if (!useMemoryStore) return postgresGroupStore.isMember(groupId, spotifyUserId);
   return groups.get(groupId)?.members.has(spotifyUserId) ?? false;
 }
 
-function joinPublicGroup(groupId, spotifyUserId) {
+async function joinPublicGroup(groupId, spotifyUserId) {
+  if (!useMemoryStore) return postgresGroupStore.joinPublicGroup(groupId, spotifyUserId);
   const group = groups.get(groupId);
   if (!group || group.visibility !== 'public') return null;
 
@@ -98,7 +116,8 @@ function joinPublicGroup(groupId, spotifyUserId) {
   return snapshot(group);
 }
 
-function requestPrivateGroupJoin(groupId, spotifyUserId) {
+async function requestPrivateGroupJoin(groupId, spotifyUserId) {
+  if (!useMemoryStore) return postgresGroupStore.requestPrivateGroupJoin(groupId, spotifyUserId);
   const group = groups.get(groupId);
   if (!group || group.visibility !== 'private') return null;
   if (group.members.has(spotifyUserId)) return { status: 'already-member' };
@@ -112,7 +131,15 @@ function requestPrivateGroupJoin(groupId, spotifyUserId) {
   return { status: 'pending', request: { ...request } };
 }
 
-function resolvePrivateGroupJoin(groupId, moderatorSpotifyUserId, requesterSpotifyUserId, accept) {
+async function resolvePrivateGroupJoin(groupId, moderatorSpotifyUserId, requesterSpotifyUserId, accept) {
+  if (!useMemoryStore) {
+    return postgresGroupStore.resolvePrivateGroupJoin(
+      groupId,
+      moderatorSpotifyUserId,
+      requesterSpotifyUserId,
+      accept
+    );
+  }
   const group = groups.get(groupId);
   if (!group) return { ok: false, reason: 'not-found' };
   if (!canManageMembers(group, moderatorSpotifyUserId)) return { ok: false, reason: 'forbidden' };
@@ -126,7 +153,8 @@ function resolvePrivateGroupJoin(groupId, moderatorSpotifyUserId, requesterSpoti
   return { ok: true, group: snapshot(group) };
 }
 
-function leaveGroup(groupId, spotifyUserId) {
+async function leaveGroup(groupId, spotifyUserId) {
+  if (!useMemoryStore) return postgresGroupStore.leaveGroup(groupId, spotifyUserId);
   const group = groups.get(groupId);
   if (!group) return { ok: false, reason: 'not-found' };
   if (!group.members.has(spotifyUserId)) return { ok: false, reason: 'not-a-member' };
@@ -139,7 +167,10 @@ function leaveGroup(groupId, spotifyUserId) {
   return { ok: true, group: snapshot(group) };
 }
 
-function removeMember(groupId, actorSpotifyUserId, targetSpotifyUserId) {
+async function removeMember(groupId, actorSpotifyUserId, targetSpotifyUserId) {
+  if (!useMemoryStore) {
+    return postgresGroupStore.removeMember(groupId, actorSpotifyUserId, targetSpotifyUserId);
+  }
   const group = groups.get(groupId);
   if (!group) return { ok: false, reason: 'not-found' };
   if (!canManageMembers(group, actorSpotifyUserId)) return { ok: false, reason: 'forbidden' };
@@ -157,7 +188,10 @@ function removeMember(groupId, actorSpotifyUserId, targetSpotifyUserId) {
   return { ok: true, group: snapshot(group) };
 }
 
-function setModerator(groupId, ownerSpotifyUserId, targetSpotifyUserId, isModerator) {
+async function setModerator(groupId, ownerSpotifyUserId, targetSpotifyUserId, isModerator) {
+  if (!useMemoryStore) {
+    return postgresGroupStore.setModerator(groupId, ownerSpotifyUserId, targetSpotifyUserId, isModerator);
+  }
   const group = groups.get(groupId);
   if (!group) return { ok: false, reason: 'not-found' };
   if (group.ownerSpotifyUserId !== ownerSpotifyUserId) return { ok: false, reason: 'forbidden' };

@@ -13,8 +13,7 @@ const useMemoryStore = !process.env.DATABASE_URL;
 
 let pool;
 if (!useMemoryStore) {
-  const { Pool } = require('pg');
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  pool = require('./pool');
 }
 
 const memoryStore = new Map();
