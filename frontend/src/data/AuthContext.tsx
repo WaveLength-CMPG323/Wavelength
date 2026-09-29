@@ -50,10 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // to check whether an accepted request exists before allowing room access.
   // This is still a temporary because the live socket is used for
   // real-time delivery, while persistent chat history is still handled later.
-    useEffect(() => {
+  useEffect(() => {
     if (!profile?.spotifyUserId) return;
 
-    const socket = getSocket(profile.spotifyUserId);
+    const socket = getSocket();
+    socket.disconnect();
+    socket.connect();
 
     return () => {
       socket.disconnect();

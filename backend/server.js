@@ -10,8 +10,10 @@ const session = require('express-session');
 const authRouter = require('./routes/auth');
 const spotifyRouter = require('./routes/spotify');
 const chatRequestsRouter = require('./routes/chatRequests');
-const { useMemoryStore } = require('./db/tokenStore');
+const groupsRouter = require('./routes/groups');
+const { getTokens, useMemoryStore } = require('./db/tokenStore');
 const { startOceanPoller } = require('./lib/spotifyPoller');
+const groupStore = require('./lib/groupStore');
 
 const app = express();
 app.set('trust proxy', 1); // needed behind Render's (or any) reverse proxy for req.ip/req.protocol to reflect the real client, not the proxy hop
@@ -75,11 +77,15 @@ function canOpenPrivateChat(me, otherUserId) {
   return hasAcceptedPrivateChatRequest(me, otherUserId);
 }
 
+function getGroupRoomId(groupId) {
+  return `group:${groupId}`;
+}
+
 // This runs every time a browser connects to the Socket.IO server.
 io.on('connection', (socket) => {
-  // The frontend sends the logged-in user's Spotify ID when the socket connects.
-  // We use it to know who is sending the message and who they are chatting with.
-  const currentUserId = socket.handshake.auth?.userId;
+  // Socket middleware reads the Spotify ID from the authenticated session
+  // and stores it on socket.data for private-chat permission checks.
+  const currentUserId = socket.data.spotifyUserId;
 
   if (!currentUserId) {
     console.log('Socket connected without userId');
@@ -133,46 +139,130 @@ io.on('connection', (socket) => {
     // Send the message to everyone in the private room.
     io.to(roomId).emit('private:message', message);
   });
-});
 
-// GROUP CHAT IS DEFERRED.
-// This is intentionally not using the same pattern as the private 1:1 chat.
-// Private chat uses a user-pair room based on request acceptance.
-// Group chat will likely use a separate group_id-based room model.
-// The final database version should store groups and memberships separately,
-// instead of reusing the request system.
+  // Group rooms use group IDs and current membership, not private-chat requests.
+  socket.on('group:join', ({ groupId } = {}, acknowledge) => {
+    if (!groupId) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Group ID is required' });
+      return;
+    }
+    if (!groupStore.isMember(groupId, currentUserId)) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'You are not a member of this group' });
+      return;
+    }
+
+    socket.join(getGroupRoomId(groupId));
+    if (typeof acknowledge === 'function') acknowledge({ ok: true });
+  });
+
+  socket.on('group:leave', ({ groupId } = {}, acknowledge) => {
+    if (!groupId) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Group ID is required' });
+      return;
+    }
+
+    socket.leave(getGroupRoomId(groupId));
+    if (typeof acknowledge === 'function') acknowledge({ ok: true });
+  });
+
+  socket.on('group:send', async ({ groupId, text } = {}, acknowledge) => {
+    const trimmedText = typeof text === 'string' ? text.trim() : '';
+    if (!groupId || !trimmedText) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Group ID and message text are required' });
+      return;
+    }
+    if (trimmedText.length > 4000) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Messages must be 4000 characters or fewer' });
+      return;
+    }
+    if (!groupStore.isMember(groupId, currentUserId)) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'You are not a member of this group' });
+      return;
+    }
+
+    const roomId = getGroupRoomId(groupId);
+    if (!socket.rooms.has(roomId)) {
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Join the group before sending messages' });
+      return;
+    }
+
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      groupId,
+      from: currentUserId,
+      text: trimmedText,
+      ts: Date.now(),
+    };
+
+    // Recheck membership when broadcasting so a removed member with an old
+    // room connection no longer receives new messages.
+    try {
+      const roomSockets = await io.in(roomId).fetchSockets();
+      for (const roomSocket of roomSockets) {
+        if (groupStore.isMember(groupId, roomSocket.data.spotifyUserId)) {
+          roomSocket.emit('group:message', message);
+        }
+      }
+      if (typeof acknowledge === 'function') acknowledge({ ok: true, messageId: message.id });
+    } catch (error) {
+      console.error('Could not broadcast group message:', error.message);
+      if (typeof acknowledge === 'function') acknowledge({ ok: false, error: 'Could not send group message' });
+    }
+  });
+});
 
 app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
 app.use(cookieParser());
 app.use(express.json()); // needed for POST /spotify/join's JSON body
 
 // Gives each browser its own private session (a 'connect.sid' cookie).
-// req.sessionID is then used as the key for storing that person's
-// Spotify tokens, so multiple people can log in independently without
-// overwriting each other.
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'dev-only-secret-change-me',
-    resave: false,
-    saveUninitialized: true, // create a session on first visit, before login
-    cookie: {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      // Frontend and backend are on different origins (different ports in
-      // dev, different domains once deployed), so the session cookie is
-      // sent on a cross-site fetch(). Locally "localhost:5173" and
-      // "localhost:3000" count as the same site, so the default 'lax'
-      // works for dev - but a real cross-domain deployment needs 'none' +
-      // secure (which requires HTTPS) or the browser will silently drop it.
-      sameSite: NEEDS_CROSS_SITE_COOKIES ? 'none' : 'lax',
-      secure: NEEDS_CROSS_SITE_COOKIES,
-    },
-  })
-);
+// Express and Socket.IO share
+// this session, so both can identify the Spotify account logged in here.
+const sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET || 'dev-only-secret-change-me',
+  resave: false,
+  saveUninitialized: true, // create a session on first visit, before login
+  cookie: {
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    // Frontend and backend are on different origins (different ports in
+    // dev, different domains once deployed), so the session cookie is
+    // sent on a cross-site fetch(). Locally "localhost:5173" and
+    // "localhost:3000" count as the same site, so the default 'lax'
+    // works for dev - but a real cross-domain deployment needs 'none' +
+    // secure (which requires HTTPS) or the browser will silently drop it.
+    sameSite: NEEDS_CROSS_SITE_COOKIES ? 'none' : 'lax',
+    secure: NEEDS_CROSS_SITE_COOKIES,
+  },
+});
+
+app.use(sessionMiddleware);
+io.engine.use(sessionMiddleware); // share the same session between Express and Socket.IO
+
+// Authenticate Socket.IO connections with the Express session.
+// By adding middleware to look up the Spotify ID using the session ID
+io.use(async (socket, next) => {
+  const sessionId = socket.request.sessionID;
+
+  // Keep anonymous connections available for the public Ocean updates.
+  if (!sessionId) {
+    socket.data.spotifyUserId = null;
+    return next();
+  }
+
+  try {
+    const tokens = await getTokens(sessionId);
+    socket.data.spotifyUserId = tokens?.spotifyUserId ?? null;
+    next();
+  } catch {
+    next(new Error('Could not authenticate socket'));
+  }
+});
 
 app.use('/auth', authRouter);
 app.use('/spotify', spotifyRouter);
 app.use('/chat-requests', chatRequestsRouter);
+app.use('/groups', groupsRouter);
 
 app.get('/', (req, res) => {
   res.send('WaveLength backend is running.');

@@ -37,7 +37,7 @@ useEffect(() => {
   if (!profile?.spotifyUserId) return;
 
   // Get the socket connected with this user's identity.
-  const socket = getSocket(profile.spotifyUserId);
+  const socket = getSocket();
 
   // Handle each private message received from the backend.
   const handlePrivateMessage = (message: {
@@ -64,12 +64,35 @@ useEffect(() => {
     });
   };
 
+  const handleGroupMessage = (message: {
+    id: string;
+    groupId: string;
+    from: string;
+    text: string;
+    ts: number;
+  }) => {
+    // Store group messages under the group ID so Conversation can reuse its existing message list.
+    mutate((draft) => {
+      const existing = draft.chats[message.groupId] || [];
+      draft.chats[message.groupId] = [
+        ...existing,
+        {
+          from: message.from === profile.spotifyUserId ? 'me' : message.from,
+          text: message.text,
+          ts: message.ts,
+        },
+      ].sort((a, b) => a.ts - b.ts);
+    });
+  };
+
   // Start listening for private messages.
   socket.on('private:message', handlePrivateMessage);
+  socket.on('group:message', handleGroupMessage);
 
   return () => {
     // Stop listening when this effect is cleaned up.
     socket.off('private:message', handlePrivateMessage);
+    socket.off('group:message', handleGroupMessage);
   };
 }, [profile?.spotifyUserId, mutate]);
 

@@ -3,7 +3,18 @@
 // cookie set by /auth/callback rides along - that cookie is how the
 // backend knows which Spotify account/session is asking. See socket.ts for
 // the companion Socket.IO connection used for live 'oceanUpdate' events.
-import type { AcceptedChat, ChatRequest, HostProfile, MyPlayback, PublicPlaylist, RecentTrack, SpotifyProfile } from '../data/types';
+import type {
+  AcceptedChat,
+  ChatRequest,
+  GroupJoinRequest,
+  HostProfile,
+  MyPlayback,
+  PrivateGroupJoinResult,
+  PublicPlaylist,
+  RecentTrack,
+  ServerGroup,
+  SpotifyProfile,
+} from '../data/types';
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -140,6 +151,113 @@ export async function respondToChatRequest(id: string, accept: boolean): Promise
   if (!res.ok) throw new Error(await errorFrom(res, 'Could not respond to chat request'));
   const body = await res.json();
   return body.request;
+}
+
+// Group requests currently use the backend's temporary in-memory store.
+// The returned shapes stay the same when that store is replaced by PostgreSQL.
+export async function fetchPublicGroups(): Promise<ServerGroup[]> {
+  const res = await apiFetch('/groups/public');
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load public groups'));
+  const body = await res.json();
+  return body.groups;
+}
+
+export async function fetchMyGroups(): Promise<ServerGroup[]> {
+  const res = await apiFetch('/groups/mine');
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load your groups'));
+  const body = await res.json();
+  return body.groups;
+}
+
+export async function fetchGroup(groupId: string): Promise<ServerGroup> {
+  const res = await apiFetch(`/groups/${encodeURIComponent(groupId)}`);
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load this group'));
+  const body = await res.json();
+  return body.group;
+}
+
+export async function createServerGroup(input: {
+  name: string;
+  description?: string;
+  icon?: string | null;
+  visibility?: 'public' | 'private';
+}): Promise<ServerGroup> {
+  const res = await apiFetch('/groups', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not create group'));
+  const body = await res.json();
+  return body.group;
+}
+
+export async function joinPublicGroup(groupId: string): Promise<ServerGroup> {
+  const res = await apiFetch(`/groups/${encodeURIComponent(groupId)}/join`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not join this group'));
+  const body = await res.json();
+  return body.group;
+}
+
+export async function requestPrivateGroupJoin(groupId: string): Promise<PrivateGroupJoinResult> {
+  const res = await apiFetch(`/groups/${encodeURIComponent(groupId)}/join-requests`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not request group access'));
+  return res.json();
+}
+
+export async function fetchGroupJoinRequests(groupId: string): Promise<GroupJoinRequest[]> {
+  const res = await apiFetch(`/groups/${encodeURIComponent(groupId)}/join-requests`);
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load group join requests'));
+  const body = await res.json();
+  return body.requests;
+}
+
+export async function respondToGroupJoinRequest(
+  groupId: string,
+  requesterSpotifyUserId: string,
+  accept: boolean
+): Promise<ServerGroup> {
+  const action = accept ? 'accept' : 'decline';
+  const path = `/groups/${encodeURIComponent(groupId)}/join-requests/${encodeURIComponent(requesterSpotifyUserId)}/${action}`;
+  const res = await apiFetch(path, { method: 'POST' });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not respond to group join request'));
+  const body = await res.json();
+  return body.group;
+}
+
+export async function leaveServerGroup(groupId: string): Promise<ServerGroup> {
+  const res = await apiFetch(`/groups/${encodeURIComponent(groupId)}/leave`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not leave this group'));
+  const body = await res.json();
+  return body.group;
+}
+
+export async function removeGroupMember(groupId: string, memberSpotifyUserId: string): Promise<ServerGroup> {
+  const path = `/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(memberSpotifyUserId)}`;
+  const res = await apiFetch(path, { method: 'DELETE' });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not remove group member'));
+  const body = await res.json();
+  return body.group;
+}
+
+export async function setGroupModerator(
+  groupId: string,
+  memberSpotifyUserId: string,
+  isModerator: boolean
+): Promise<ServerGroup> {
+  const path = `/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(memberSpotifyUserId)}/moderator`;
+  const res = await apiFetch(path, {
+    method: 'PATCH',
+    body: JSON.stringify({ isModerator }),
+  });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not update group role'));
+  const body = await res.json();
+  return body.group;
 }
 
 export async function resumePlayback(): Promise<void> {

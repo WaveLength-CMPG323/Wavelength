@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, ListMusic } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader';
 import { useData } from '../../data/DataContext';
 import { useAuth } from '../../data/AuthContext';
-import { fetchRecentlyPlayed, fetchPublicPlaylists } from '../../lib/api';
-import type { RecentTrack, PublicPlaylist } from '../../data/types';
+import { fetchMyGroups, fetchRecentlyPlayed, fetchPublicPlaylists } from '../../lib/api';
+import type { RecentTrack, PublicPlaylist, ServerGroup } from '../../data/types';
 
 // "played 5m ago" / "played 3h ago" / "played 2d ago" from an ISO timestamp.
 function timeAgo(iso: string): string {
@@ -21,6 +22,7 @@ function timeAgo(iso: string): string {
 export default function MyProfilePage() {
   const { db, mutate } = useData();
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const { me } = db;
   const [nickname, setNickname] = useState(me.nickname);
   const [bio, setBio] = useState(me.bio);
@@ -31,8 +33,10 @@ export default function MyProfilePage() {
   const [recentError, setRecentError] = useState('');
   const [playlists, setPlaylists] = useState<PublicPlaylist[]>([]);
   const [playlistsError, setPlaylistsError] = useState('');
+  const [groups, setGroups] = useState<ServerGroup[]>([]);
+  const [groupsError, setGroupsError] = useState('');
 
-  const groupsCount = Object.values(db.groups).filter((g) => g.members.includes('me')).length;
+  const groupsCount = groups.length;
 
   // Real Spotify data for this page - separate from the mock nickname/bio/
   // genres above, which are still app-only local state (no backend for
@@ -46,6 +50,9 @@ export default function MyProfilePage() {
     fetchPublicPlaylists()
       .then(setPlaylists)
       .catch((err) => setPlaylistsError(err instanceof Error ? err.message : 'Could not load playlists'));
+    fetchMyGroups()
+      .then(setGroups)
+      .catch((err) => setGroupsError(err instanceof Error ? err.message : 'Could not load groups'));
   }, []);
 
   function addGenre(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -126,6 +133,34 @@ export default function MyProfilePage() {
             <p className="text-xl font-bold text-cyan-100">{me.genres.length}</p>
             <p className="text-xs uppercase tracking-wider text-cyan-300">Genres</p>
           </div>
+        </div>
+
+        <div className="border-b border-cyan-500/20 py-6">
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cyan-300">Groups joined</h3>
+          {groupsError ? (
+            <p className="text-xs text-red-400">{groupsError}</p>
+          ) : groups.length === 0 ? (
+            <p className="text-xs text-slate-400">You haven&apos;t joined any groups yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {groups.map((group) => (
+                <li key={group.id}>
+                  <button
+                    onClick={() => navigate(`/chat?group=${encodeURIComponent(group.id)}`)}
+                    type="button"
+                    className="flex w-full items-center gap-3 text-left"
+                  >
+                    <img src={group.icon ?? '/avatars/avatar4.svg'} alt="" className="h-9 w-9 rounded-full object-cover" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm text-cyan-100">{group.name}</span>
+                      <span className="block text-xs text-slate-400">{group.members.length} members</span>
+                    </span>
+                    <span className="text-xs text-cyan-300">{group.members.find((member) => member.spotifyUserId === profile?.spotifyUserId)?.role}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Genre pills */}

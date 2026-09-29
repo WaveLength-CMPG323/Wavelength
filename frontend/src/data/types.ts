@@ -51,6 +51,38 @@ export interface Group {
   members: string[]; // user ids, 'me' included
 }
 
+// Groups returned by the backend. Keep this separate from the local mock
+// Group above so the existing mock-backed UI can be migrated a piece at a time.
+export type GroupVisibility = 'public' | 'private';
+export type GroupRole = 'owner' | 'moderator' | 'member';
+
+export interface ServerGroupMember {
+  spotifyUserId: string;
+  displayName: string;
+  profileImage: string | null;
+  role: GroupRole;
+  joinedAt: number;
+}
+
+export interface ServerGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  visibility: GroupVisibility;
+  ownerSpotifyUserId: string;
+  members: ServerGroupMember[];
+}
+
+export interface GroupJoinRequest {
+  spotifyUserId: string;
+  requestedAt: number;
+}
+
+export type PrivateGroupJoinResult =
+  | { status: 'already-member' }
+  | { status: 'pending'; request: GroupJoinRequest };
+
 export type NotificationStatus = 'pending' | 'accepted' | 'declined';
 
 export interface AppNotification {

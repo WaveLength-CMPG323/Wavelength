@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import NavPanel from '../../components/NavPanel';
-import { useData } from '../../data/DataContext';
+import { createServerGroup } from '../../lib/api';
+import type { GroupVisibility, ServerGroup } from '../../data/types';
 
 const PREDEFINED_ICONS = ['/avatars/avatar1.svg', '/avatars/avatar2.svg', '/avatars/avatar3.svg', '/avatars/avatar4.svg', '/avatars/avatar5.svg', '/avatars/avatar6.svg'];
 
@@ -11,26 +12,40 @@ export default function CreateGroupPanel({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated: (groupId: string) => void;
+  onCreated: (group: ServerGroup) => void;
 }) {
-  const { db, createGroup } = useData();
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [icon, setIcon] = useState(PREDEFINED_ICONS[0]);
-  const [members, setMembers] = useState<string[]>([]);
+  const [visibility, setVisibility] = useState<GroupVisibility>('public');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const friendIds = Object.keys(db.users).filter((id) => db.users[id].chatStatus === 'friend');
+  async function submit() {
+    const trimmedName = name.trim();
+    if (!trimmedName || saving) return;
 
-  function toggleMember(id: string) {
-    setMembers((prev) => (prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]));
-  }
-
-  function submit() {
-    if (!name.trim()) return;
-    const id = createGroup(name.trim(), icon, members);
-    setName('');
-    setMembers([]);
-    onClose();
-    onCreated(id);
+    setError('');
+    setSaving(true);
+    try {
+      // The backend identifies the owner from the login session; mock friend IDs are not sent as members.
+      const group = await createServerGroup({
+        name: trimmedName,
+        description: description.trim() || undefined,
+        icon,
+        visibility,
+      });
+      setName('');
+      setDescription('');
+      setIcon(PREDEFINED_ICONS[0]);
+      setVisibility('public');
+      onClose();
+      onCreated(group);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not create group');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -45,6 +60,34 @@ export default function CreateGroupPanel({
             className="w-full rounded-lg border border-cyan-500/20 bg-[#02182b] px-3 py-2 text-sm text-white placeholder:text-slate-500"
           />
         </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-cyan-300">Description (optional)</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            className="w-full rounded-lg border border-cyan-500/20 bg-[#02182b] px-3 py-2 text-sm text-white placeholder:text-slate-500"
+          />
+        </div>
+
+        <fieldset>
+          <legend className="mb-1 block text-sm font-semibold text-cyan-300">Visibility</legend>
+          <div className="flex gap-2">
+            {(['public', 'private'] as const).map((option) => (
+              <label key={option} className="flex items-center gap-2 text-sm text-slate-200">
+                <input
+                  type="radio"
+                  name="group-visibility"
+                  value={option}
+                  checked={visibility === option}
+                  onChange={() => setVisibility(option)}
+                />
+                {option === 'public' ? 'Public' : 'Private'}
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <div>
           <label className="mb-1 block text-sm font-semibold text-cyan-300">Choose an icon</label>
@@ -62,21 +105,10 @@ export default function CreateGroupPanel({
           </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-cyan-300">Add friends</label>
-          {friendIds.length === 0 && <p className="text-xs text-slate-500">No friends yet to add.</p>}
-          <div className="flex flex-col gap-1">
-            {friendIds.map((id) => (
-              <label key={id} className="flex items-center gap-2 text-sm text-slate-200">
-                <input type="checkbox" checked={members.includes(id)} onChange={() => toggleMember(id)} />
-                {db.users[id].name}
-              </label>
-            ))}
-          </div>
-        </div>
+        {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
 
-        <button onClick={submit} type="button" className="rounded-full bg-[#1ED760] py-2.5 text-sm font-semibold text-black hover:bg-[#1fdf64]">
-          Create Group
+        <button onClick={() => void submit()} disabled={saving || !name.trim()} type="button" className="rounded-full bg-[#1ED760] py-2.5 text-sm font-semibold text-black hover:bg-[#1fdf64] disabled:opacity-50">
+          {saving ? 'Creating…' : 'Create Group'}
         </button>
       </div>
     </NavPanel>
