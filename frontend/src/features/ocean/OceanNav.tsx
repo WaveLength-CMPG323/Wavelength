@@ -4,6 +4,7 @@ import { Search, Waves } from 'lucide-react';
 import { useData } from '../../data/DataContext';
 import { useAuth } from '../../data/AuthContext';
 import { fetchIncomingChatRequests } from '../../lib/api';
+import ThemeToggle from '../../components/ThemeToggle';
 
 interface Props {
   onSearch: (query: string) => void;
@@ -43,7 +44,7 @@ export default function OceanNav({ onSearch, onOpenNotifications, onOpenChalleng
   }, [isLoggedIn]);
 
   return (
-    <div className="absolute inset-x-0 top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-cyan-500/20 bg-[#02182b]/80 px-4 py-2.5 text-cyan-100 backdrop-blur">
+    <div className="absolute inset-x-0 top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-cyan-500/20 bg-wl-bg/80 px-4 py-2.5 text-wl-title backdrop-blur">
       <div className="flex items-center gap-4">
         {isLoggedIn ? (
           <>
@@ -52,50 +53,52 @@ export default function OceanNav({ onSearch, onOpenNotifications, onOpenChalleng
                 {profile?.profileImage ? (
                   <img src={profile.profileImage} alt="Your Spotify profile" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="text-xs font-semibold text-slate-300">
+                  <span className="text-xs font-semibold text-[#cbd5e1]">
                     {(profile?.displayName || '?').charAt(0).toUpperCase()}
                   </span>
                 )}
               </span>
             </Link>
-            <Link to="/chat" className="relative text-sm font-medium hover:text-cyan-300">
+            <Link to="/chat" className="relative text-sm font-medium hover:text-wl-link">
               Chat
               {db.hasChatDot && <span className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-red-500" />}
             </Link>
-            <button onClick={onOpenNotifications} type="button" className="relative text-sm font-medium hover:text-cyan-300">
+            <button onClick={onOpenNotifications} type="button" className="relative text-sm font-medium hover:text-wl-link">
               Notifications
               {pendingCount > 0 && <span className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-red-500" />}
             </button>
             <button
               onClick={onOpenChallenge}
               type="button"
-              className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/20"
+              className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-wl-cyan hover:bg-cyan-500/20"
             >
               Weekly Challenge
             </button>
           </>
         ) : (
           <span className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-            <Waves className="h-5 w-5 text-cyan-400" />
+            <Waves className="h-5 w-5 text-wl-icon" />
             WaveLength
           </span>
         )}
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-[#04385a]/60 px-3 py-1.5">
-          <Search className="h-4 w-4 text-cyan-400" />
+        <ThemeToggle />
+
+        <div className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-wl-panel/60 px-3 py-1.5">
+          <Search className="h-4 w-4 text-wl-icon" />
           <input
             type="text"
             placeholder="Search / filter"
             aria-label="Search or filter"
             onChange={(e) => onSearch(e.target.value)}
-            className="w-32 bg-transparent text-sm text-cyan-100 placeholder:text-cyan-100/40 outline-none sm:w-48"
+            className="w-32 bg-transparent text-sm text-wl-title placeholder:text-wl-title/40 outline-none sm:w-48"
           />
         </div>
 
         {isLoggedIn ? (
-          <button onClick={logout} type="button" className="text-sm font-medium text-cyan-300/70 hover:text-cyan-200">
+          <button onClick={logout} type="button" className="text-sm font-medium text-wl-link/70 hover:text-wl-cyan">
             Log out
           </button>
         ) : (

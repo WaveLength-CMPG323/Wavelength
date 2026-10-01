@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Song } from '../../data/types';
+import { useTheme } from '../../data/ThemeContext';
 
 export interface OceanMarker {
   id: string; // song id
@@ -26,11 +27,28 @@ const SINK_DURATION_MS = 2200;
 const SINK_DISTANCE = 70; // px, how far down it drifts while sinking
 // Each wave band: how far down the canvas its resting line sits (0 = top, 1 = bottom),
 // its own amplitude/wavelength/speed and a colour, back-to-front (drawn in this order).
-const WAVE_BANDS = [
-  { baseline: 0.58, amplitude: 16, wavelength: 220, speed: 0.35, color: 'rgba(34,211,238,0.12)' },
-  { baseline: 0.72, amplitude: 20, wavelength: 260, speed: 0.5, color: 'rgba(34,211,238,0.22)' },
-  { baseline: 0.86, amplitude: 24, wavelength: 300, speed: 0.7, color: 'rgba(34,211,238,0.38)' },
+//
+// Colours are [r, g, b, a] pairs for night/day; the draw loop blends between
+// them while the theme switches (see themeMix) so the water changes in step
+// with the sky behind it (SkyScene.tsx) instead of snapping.
+type RGBA = [number, number, number, number];
+const WAVE_BANDS: {
+  baseline: number; amplitude: number; wavelength: number; speed: number; night: RGBA; day: RGBA;
+}[] = [
+  { baseline: 0.58, amplitude: 16, wavelength: 220, speed: 0.35, night: [34, 211, 238, 0.12], day: [8, 112, 200, 0.16] },
+  { baseline: 0.72, amplitude: 20, wavelength: 260, speed: 0.5, night: [34, 211, 238, 0.22], day: [8, 112, 200, 0.26] },
+  { baseline: 0.86, amplitude: 24, wavelength: 300, speed: 0.7, night: [34, 211, 238, 0.38], day: [8, 112, 200, 0.4] },
 ];
+// The sea body under the waves (the sky above the horizon is DOM, not canvas).
+const SEA_TOP: { night: RGBA; day: RGBA } = { night: [4, 56, 90, 1], day: [150, 214, 244, 1] };
+const SEA_BOTTOM: { night: RGBA; day: RGBA } = { night: [10, 74, 110, 1], day: [58, 158, 214, 1] };
+const THEME_FADE_SECONDS = 1.2; // matches --wl-theme-duration in index.css
+
+function blend(night: RGBA, day: RGBA, mix: number): string {
+  // mix: 0 = day, 1 = night
+  const c = night.map((n, i) => day[i] + (n - day[i]) * mix);
+  return `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${c[3].toFixed(3)})`;
+}
 
 // A stable per-song hash so a track's wave lane (and starting speed/phase)
 // depends on its own Spotify track ID, not on its position in the current
@@ -72,6 +90,13 @@ export function useOceanCanvas({ markers, onSelect, imageResolver }: Options) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // Day/night blend (0 = day, 1 = night). Starts at the current theme so
+  // there's no fade on first load; the draw loop eases it toward the target.
+  const { isDark } = useTheme();
+  const themeTargetRef = useRef(isDark ? 1 : 0);
+  themeTargetRef.current = isDark ? 1 : 0;
+  const themeMixRef = useRef(isDark ? 1 : 0);
 
   const runtimeRef = useRef<Map<string, MarkerRuntime>>(new Map());
   const imagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -179,21 +204,39 @@ export function useOceanCanvas({ markers, onSelect, imageResolver }: Options) {
       if (!canvas || !container) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
-      const dt = Math.min(0.05, (time - lastTime) / 1000);
+      const elapsed = (time - lastTime) / 1000;
+      const dt = Math.min(0.05, elapsed); // capped: keeps marker motion smooth after a stall
       lastTime = time;
       const t = time / 1000;
 
       syncRuntime(w, time);
 
+      // Ease the day/night blend toward the current theme.
+      const target = themeTargetRef.current;
+      const step = Math.min(0.25, elapsed) / THEME_FADE_SECONDS; // real time, so the fade stays in step with the CSS sky even at low fps
+      const cur = themeMixRef.current;
+      themeMixRef.current = cur < target ? Math.min(target, cur + step) : Math.max(target, cur - step);
+      const m = themeMixRef.current;
+      const mix = m * m * (3 - 2 * m); // smoothstep
+
+      // Transparent canvas: the sky is rendered behind it by <SkyScene />.
       ctx.clearRect(0, 0, w, h);
 
-      // Sky-to-sea background gradient.
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, '#02182b');
-      grad.addColorStop(0.55, '#04385a');
-      grad.addColorStop(1, '#0a4a6e');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
+      // Sea body: everything below the back wave's line.
+      const seaTop = h * WAVE_BANDS[0].baseline - WAVE_BANDS[0].amplitude * 1.3;
+      const sea = ctx.createLinearGradient(0, seaTop, 0, h);
+      sea.addColorStop(0, blend(SEA_TOP.night, SEA_TOP.day, mix));
+      sea.addColorStop(1, blend(SEA_BOTTOM.night, SEA_BOTTOM.day, mix));
+      ctx.beginPath();
+      ctx.moveTo(0, waveY(0, 0, t, w, h));
+      for (let x = 0; x <= w; x += 8) {
+        ctx.lineTo(x, waveY(0, x, t, w, h));
+      }
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fillStyle = sea;
+      ctx.fill();
 
       // Three wave bands, back to front.
       WAVE_BANDS.forEach((band, bandIndex) => {
@@ -205,7 +248,7 @@ export function useOceanCanvas({ markers, onSelect, imageResolver }: Options) {
         ctx.lineTo(w, h);
         ctx.lineTo(0, h);
         ctx.closePath();
-        ctx.fillStyle = band.color;
+        ctx.fillStyle = blend(band.night, band.day, mix);
         ctx.fill();
       });
 

@@ -15,9 +15,9 @@ export default function UserProfilePage() {
   const user = id ? db.users[id] : undefined;
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#02182b] text-white">
+      <div className="min-h-screen bg-wl-bg text-wl-fg">
         <PageHeader title="Profile" />
-        <p className="p-6 text-sm text-slate-400">User not found.</p>
+        <p className="p-6 text-sm text-wl-muted">User not found.</p>
       </div>
     );
   }
@@ -27,10 +27,10 @@ export default function UserProfilePage() {
   const username = user.name.toLowerCase().replace(/\s+/g, '.');
 
   return (
-    <div className="min-h-screen bg-[#02182b] pb-16 text-white">
+    <div className="min-h-screen bg-wl-bg pb-16 text-wl-fg">
       <PageHeader title={user.name} />
 
-      <div className="mx-auto my-8 max-w-4xl rounded-3xl border border-cyan-500/20 bg-[#04385a]/90 p-6 shadow-2xl backdrop-blur-md md:p-8">
+      <div className="mx-auto my-8 max-w-4xl rounded-3xl border border-cyan-500/20 bg-wl-panel/90 p-6 shadow-2xl backdrop-blur-md md:p-8">
         {/* Header: avatar, name, tier, actions */}
         <div className="flex flex-col items-center justify-between gap-6 border-b border-cyan-500/20 pb-6 md:flex-row md:items-start">
           <div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -38,10 +38,10 @@ export default function UserProfilePage() {
               <img src={user.pic} alt={user.name} className="h-full w-full object-cover" />
             </div>
             <div className="space-y-2 text-center sm:text-left">
-              <h2 className="text-2xl font-bold tracking-wide text-cyan-100">
-                {user.name} <span className="text-sm font-normal text-cyan-400">@{username}</span>
+              <h2 className="text-2xl font-bold tracking-wide text-wl-title">
+                {user.name} <span className="text-sm font-normal text-wl-icon">@{username}</span>
               </h2>
-              <div className="inline-block rounded border border-cyan-500/30 bg-cyan-950/80 px-2.5 py-0.5 text-xs text-cyan-300">
+              <div className="inline-block rounded border border-cyan-500/30 bg-cyan-500/15 px-2.5 py-0.5 text-xs text-wl-link">
                 Tier: {tierFromFollowers(user.followers)}
               </div>
             </div>
@@ -54,7 +54,7 @@ export default function UserProfilePage() {
               className={`w-full rounded-md py-2 px-4 text-sm font-medium transition md:w-44 ${
                 user.followedByMe
                   ? 'bg-slate-200 text-slate-900 hover:bg-white'
-                  : 'border border-slate-700 bg-black text-white hover:bg-slate-900'
+                  : 'border border-slate-700 bg-black text-[#ffffff] hover:bg-slate-900'
               }`}
             >
               {user.followedByMe ? 'Following' : 'Follow'}
@@ -83,24 +83,24 @@ export default function UserProfilePage() {
         {/* Stats bar */}
         <div className="flex items-center justify-around border-b border-cyan-500/20 py-6 text-center">
           <div>
-            <p className="text-xl font-bold text-cyan-100">{user.followers.toLocaleString()}</p>
-            <p className="text-xs uppercase tracking-wider text-cyan-300">Followers</p>
+            <p className="text-xl font-bold text-wl-title">{user.followers.toLocaleString()}</p>
+            <p className="text-xs uppercase tracking-wider text-wl-link">Followers</p>
           </div>
           <div>
-            <p className="text-xl font-bold text-cyan-100">{user.following.toLocaleString()}</p>
-            <p className="text-xs uppercase tracking-wider text-cyan-300">Following</p>
+            <p className="text-xl font-bold text-wl-title">{user.following.toLocaleString()}</p>
+            <p className="text-xs uppercase tracking-wider text-wl-link">Following</p>
           </div>
           <div>
-            <p className="text-xl font-bold text-cyan-100">{groupsCount}</p>
-            <p className="text-xs uppercase tracking-wider text-cyan-300">Groups</p>
+            <p className="text-xl font-bold text-wl-title">{groupsCount}</p>
+            <p className="text-xs uppercase tracking-wider text-wl-link">Groups</p>
           </div>
         </div>
 
         {/* Shared tracks grid */}
         <div className="pt-6">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-cyan-300">Shared Tracks</h3>
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-wl-link">Shared Tracks</h3>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {theirSongs.length === 0 && <p className="col-span-3 text-sm text-slate-400">No shared tracks yet.</p>}
+            {theirSongs.length === 0 && <p className="col-span-3 text-sm text-wl-muted">No shared tracks yet.</p>}
             {theirSongs.map((song) => (
               <button
                 key={song.id}

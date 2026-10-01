@@ -35,10 +35,10 @@ export default function NotificationsPanel({ open, onClose }: { open: boolean; o
   return (
     <NavPanel open={open} onClose={onClose} title="Notifications">
       <div className="flex flex-col gap-3 px-5 py-4">
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-wl-danger">{error}</p>}
 
         {requests.length === 0 && !error && (
-          <p className="text-sm text-slate-400">No notifications yet.</p>
+          <p className="text-sm text-wl-muted">No notifications yet.</p>
         )}
 
         {requests.map((r) => (
@@ -47,12 +47,12 @@ export default function NotificationsPanel({ open, onClose }: { open: boolean; o
               {r.fromProfileImage ? (
                 <img src={r.fromProfileImage} alt={r.fromDisplayName ?? ''} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-xs font-semibold text-slate-300">
+                <span className="text-xs font-semibold text-[#cbd5e1]">
                   {(r.fromDisplayName || '?').charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
-            <span className="flex-1 text-sm text-cyan-100">
+            <span className="flex-1 text-sm text-wl-title">
               {r.fromDisplayName || 'Someone'} wants to chat with you
             </span>
             <div className="flex gap-2">
@@ -68,7 +68,7 @@ export default function NotificationsPanel({ open, onClose }: { open: boolean; o
                 onClick={() => respond(r.id, false)}
                 disabled={respondingId === r.id}
                 type="button"
-                className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-300 disabled:opacity-50"
+                className="rounded-full bg-wl-fg/10 px-3 py-1 text-xs font-semibold text-wl-soft disabled:opacity-50"
               >
                 Decline
               </button>

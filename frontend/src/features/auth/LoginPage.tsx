@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Music2, Trophy, Users, Waves } from 'lucide-react';
 import { useAuth } from '../../data/AuthContext';
+import ThemeToggle from '../../components/ThemeToggle';
 
 // Real login screen (adapted from the team's LandingPage design). "Connect
 // with Spotify" does a full-page redirect into the backend's OAuth flow
@@ -27,12 +28,13 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#02182b] text-white">
+    <main className="min-h-screen bg-wl-bg text-wl-fg">
       <section className="min-h-screen px-6 py-8">
         <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col">
           <header className="flex items-center gap-3">
-            <Waves className="size-8 text-cyan-400" aria-hidden="true" />
-            <span className="text-xl font-bold text-cyan-100">WaveLength</span>
+            <Waves className="size-8 text-wl-icon" aria-hidden="true" />
+            <span className="text-xl font-bold text-wl-title">WaveLength</span>
+            <ThemeToggle className="ml-auto" />
           </header>
 
           <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -40,12 +42,12 @@ export default function LoginPage() {
               Discover music through the people listening right now
             </h1>
 
-            <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
+            <p className="mt-6 max-w-2xl text-base leading-7 text-wl-soft sm:text-lg">
               Enter a living ocean of music, meet listeners who share your taste, and find your next favourite song.
             </p>
 
             {errorReason && (
-              <p className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+              <p className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-wl-danger">
                 {ERROR_MESSAGES[errorReason] || 'Could not connect to Spotify — please try again.'}
               </p>
             )}
@@ -63,7 +65,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="mt-4 text-sm font-medium text-cyan-300/80 hover:text-cyan-200"
+              className="mt-4 text-sm font-medium text-wl-link/80 hover:text-wl-cyan"
             >
               Keep browsing as guest
             </button>
@@ -71,31 +73,31 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <section className="border-t border-cyan-500/20 bg-[#04385a] px-6 py-16">
+      <section className="border-t border-cyan-500/20 bg-wl-panel px-6 py-16">
         <div className="mx-auto max-w-7xl">
-          <h2 className="text-center text-3xl font-bold text-cyan-100">Find your people through music</h2>
+          <h2 className="text-center text-3xl font-bold text-wl-title">Find your people through music</h2>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <article className="rounded-lg border border-cyan-500/20 bg-[#02182b] p-6">
-              <Waves className="size-7 text-cyan-400" aria-hidden="true" />
+            <article className="rounded-lg border border-cyan-500/20 bg-wl-bg p-6">
+              <Waves className="size-7 text-wl-icon" aria-hidden="true" />
               <h3 className="mt-4 text-lg font-semibold">Explore the Ocean</h3>
-              <p className="mt-2 leading-6 text-slate-300">
+              <p className="mt-2 leading-6 text-wl-soft">
                 Discover songs through the live listening activity of other users.
               </p>
             </article>
 
-            <article className="rounded-lg border border-cyan-500/20 bg-[#02182b] p-6">
-              <Users className="size-7 text-cyan-400" aria-hidden="true" />
+            <article className="rounded-lg border border-cyan-500/20 bg-wl-bg p-6">
+              <Users className="size-7 text-wl-icon" aria-hidden="true" />
               <h3 className="mt-4 text-lg font-semibold">Join Groups</h3>
-              <p className="mt-2 leading-6 text-slate-300">
+              <p className="mt-2 leading-6 text-wl-soft">
                 Connect with communities built around shared musical interests.
               </p>
             </article>
 
-            <article className="rounded-lg border border-cyan-500/20 bg-[#02182b] p-6">
-              <Trophy className="size-7 text-cyan-400" aria-hidden="true" />
+            <article className="rounded-lg border border-cyan-500/20 bg-wl-bg p-6">
+              <Trophy className="size-7 text-wl-icon" aria-hidden="true" />
               <h3 className="mt-4 text-lg font-semibold">Take on Challenges</h3>
-              <p className="mt-2 leading-6 text-slate-300">
+              <p className="mt-2 leading-6 text-wl-soft">
                 Participate in weekly community challenges and unlock cosmetic profile effects.
               </p>
             </article>
@@ -103,13 +105,13 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <footer className="border-t border-cyan-500/20 bg-[#02182b] px-6 py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-slate-400 sm:flex-row">
+      <footer className="border-t border-cyan-500/20 bg-wl-bg px-6 py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-wl-muted sm:flex-row">
           <p>&copy; 2026 WaveLength</p>
           <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2" aria-label="Legal information">
-            <a className="hover:text-cyan-300" href="#privacy">Privacy Policy</a>
-            <a className="hover:text-cyan-300" href="#terms">Terms of Use</a>
-            <a className="hover:text-cyan-300" href="#data-processing">POPIA Data Processing Notice</a>
+            <a className="hover:text-wl-link" href="#privacy">Privacy Policy</a>
+            <a className="hover:text-wl-link" href="#terms">Terms of Use</a>
+            <a className="hover:text-wl-link" href="#data-processing">POPIA Data Processing Notice</a>
           </nav>
         </div>
       </footer>

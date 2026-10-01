@@ -141,7 +141,7 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
     <AnimatePresence>
       {group && (
         <motion.div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-40 flex items-center justify-center bg-wl-scrim p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -149,13 +149,13 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
         >
           <motion.div
             onClick={(e) => e.stopPropagation()}
-            className="no-scrollbar flex max-h-[85vh] w-full max-w-sm flex-col gap-4 overflow-y-auto rounded-2xl border border-cyan-500/20 bg-[#04385a] p-6 shadow-2xl"
+            className="no-scrollbar flex max-h-[85vh] w-full max-w-sm flex-col gap-4 overflow-y-auto rounded-2xl border border-cyan-500/20 bg-wl-panel p-6 shadow-2xl"
             initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ type: 'spring', damping: 26, stiffness: 300 }}
           >
-            <button onClick={onClose} aria-label="Close" className="self-end text-cyan-300/70 hover:text-cyan-200" type="button">
+            <button onClick={onClose} aria-label="Close" className="self-end text-wl-link/70 hover:text-wl-cyan" type="button">
               <X className="h-5 w-5" />
             </button>
 
@@ -166,33 +166,33 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
                 short wide rectangle. shrink-0 locks it at a true 256x256
                 regardless of how much else is in the panel; the panel
                 scrolls instead. */}
-            <div className="mx-auto flex aspect-square h-64 w-64 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-cyan-950 shadow-lg">
+            <div className="mx-auto flex aspect-square h-64 w-64 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-cyan-500/15 shadow-lg">
               {group.albumArt ? (
                 <img src={group.albumArt} alt={`${group.trackName} cover art`} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-6xl font-light text-cyan-100/80">
+                <span className="text-6xl font-light text-wl-title/80">
                   {group.trackName.trim().charAt(0).toUpperCase() || '♪'}
                 </span>
               )}
             </div>
 
-            <div className="h-1 overflow-hidden rounded-full bg-white/10">
+            <div className="h-1 overflow-hidden rounded-full bg-wl-fg/10">
               <div className="h-full bg-gradient-to-r from-[#543ab7] to-cyan-400" style={{ width: `${progressPct}%` }} />
             </div>
-            <div className="-mt-3 flex justify-between text-[11px] text-slate-400">
+            <div className="-mt-3 flex justify-between text-[11px] text-wl-muted">
               <span>{formatMs(liveProgressMs)}</span>
               <span>{formatMs(group.durationMs)}</span>
             </div>
 
-            <div className="flex items-center justify-center gap-1.5 text-cyan-300/70">
+            <div className="flex items-center justify-center gap-1.5 text-wl-link/70">
               {group.isPlaying ? <Play className="h-3.5 w-3.5 fill-current" /> : <Pause className="h-3.5 w-3.5 fill-current" />}
               <span className="text-xs">{group.isPlaying ? 'Playing' : 'Paused'}</span>
             </div>
 
             <div className="text-center">
-              <div className="text-lg font-semibold text-cyan-100">{group.trackName}</div>
-              <div className="text-sm text-slate-400">{group.artist}</div>
-              <div className="mt-1 text-xs text-slate-500">
+              <div className="text-lg font-semibold text-wl-title">{group.trackName}</div>
+              <div className="text-sm text-wl-muted">{group.artist}</div>
+              <div className="mt-1 text-xs text-wl-faint">
                 {group.listenerCount} {group.listenerCount === 1 ? 'listener' : 'listeners'}
               </div>
             </div>
@@ -210,20 +210,20 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
               onClick={handleFollowToggle}
               disabled={isMyTrack}
               className={`rounded-full py-2 text-sm font-semibold disabled:opacity-40 ${
-                following ? 'bg-[#543ab7] text-white' : 'bg-white/10 text-white'
+                following ? 'bg-[#543ab7] text-[#ffffff]' : 'bg-wl-fg/10 text-wl-fg'
               }`}
               type="button"
             >
               {following ? 'Following Along ✓' : 'Follow Along'}
             </button>
-            <p className="-mt-2 text-center text-[11px] text-slate-500">
+            <p className="-mt-2 text-center text-[11px] text-wl-faint">
               {following
                 ? "You'll automatically switch whenever the host skips."
                 : "You'll finish this song even if the host skips ahead."}
             </p>
 
             {error && (
-              <div className="text-center text-xs text-red-400">
+              <div className="text-center text-xs text-wl-danger">
                 <p>{error}</p>
                 {/* If Join can't remote-control playback (no Premium, or no
                     active device anywhere), this is the fallback: opening
@@ -232,7 +232,7 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
                   href={trackUrl(group.trackUri)}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-cyan-300 underline hover:text-cyan-200"
+                  className="mt-1 inline-flex items-center gap-1 text-wl-link underline hover:text-wl-cyan"
                 >
                   <ExternalLink className="h-3 w-3" />
                   Open in Spotify instead
@@ -240,20 +240,20 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
               </div>
             )}
 
-            <div className="flex items-center gap-2 border-t border-white/10 pt-3">
+            <div className="flex items-center gap-2 border-t border-wl-fg/10 pt-3">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-700">
                 {group.hostProfileImage && (
                   <img src={group.hostProfileImage} alt="" className="h-full w-full object-cover" />
                 )}
               </div>
-              <span className="flex-1 truncate text-left text-xs text-slate-300">
-                Started by <b className="font-medium text-white">{group.hostDisplayName || 'someone'}</b>
+              <span className="flex-1 truncate text-left text-xs text-wl-soft">
+                Started by <b className="font-medium text-wl-fg">{group.hostDisplayName || 'someone'}</b>
               </span>
               {group.hostSpotifyUserId && (
                 <Link
                   to={`/hosts/${group.hostSpotifyUserId}`}
                   onClick={onClose}
-                  className="whitespace-nowrap rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs text-white hover:bg-white/20"
+                  className="whitespace-nowrap rounded-full border border-wl-fg/25 bg-wl-fg/10 px-3 py-1 text-xs text-wl-fg hover:bg-wl-fg/20"
                 >
                   View Profile
                 </Link>

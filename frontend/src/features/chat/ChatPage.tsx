@@ -23,7 +23,7 @@ export default function ChatPage() {
   const groupIds = Object.keys(db.groups);
 
   return (
-    <div className="flex h-screen flex-col bg-[#02182b] text-white">
+    <div className="flex h-screen flex-col bg-wl-bg text-wl-fg">
       <PageHeader title="Chat" />
 
       <div className="flex flex-1 overflow-hidden">
@@ -32,14 +32,14 @@ export default function ChatPage() {
             <button
               onClick={() => setTab('friends')}
               type="button"
-              className={`flex-1 py-2 text-sm font-medium ${tab === 'friends' ? 'border-b-2 border-cyan-400 text-cyan-100' : 'text-slate-500'}`}
+              className={`flex-1 py-2 text-sm font-medium ${tab === 'friends' ? 'border-b-2 border-cyan-400 text-wl-title' : 'text-wl-faint'}`}
             >
               Friends
             </button>
             <button
               onClick={() => setTab('groups')}
               type="button"
-              className={`flex-1 py-2 text-sm font-medium ${tab === 'groups' ? 'border-b-2 border-cyan-400 text-cyan-100' : 'text-slate-500'}`}
+              className={`flex-1 py-2 text-sm font-medium ${tab === 'groups' ? 'border-b-2 border-cyan-400 text-wl-title' : 'text-wl-faint'}`}
             >
               Groups
             </button>
@@ -48,7 +48,7 @@ export default function ChatPage() {
           <div className="flex-1 overflow-y-auto">
             {tab === 'friends' && (
               friendIds.length === 0 ? (
-                <p className="p-4 text-xs text-slate-500">No chats yet — accept a request from Notifications.</p>
+                <p className="p-4 text-xs text-wl-faint">No chats yet — accept a request from Notifications.</p>
               ) : (
                 friendIds.map((id) => {
                   const user = db.users[id];
@@ -62,8 +62,8 @@ export default function ChatPage() {
                     >
                       <img src={user.pic} alt={user.name} className="h-10 w-10 rounded-full object-cover" />
                       <span>
-                        <span className="block text-sm font-medium text-cyan-100">{user.name}</span>
-                        <span className="block text-xs text-slate-400">{sub}</span>
+                        <span className="block text-sm font-medium text-wl-title">{user.name}</span>
+                        <span className="block text-xs text-wl-muted">{sub}</span>
                       </span>
                     </button>
                   );
@@ -74,7 +74,7 @@ export default function ChatPage() {
             {tab === 'groups' && (
               <>
                 {groupIds.length === 0 ? (
-                  <p className="p-4 text-xs text-slate-500">No groups yet.</p>
+                  <p className="p-4 text-xs text-wl-faint">No groups yet.</p>
                 ) : (
                   groupIds.map((id) => {
                     const group = db.groups[id];
@@ -87,8 +87,8 @@ export default function ChatPage() {
                       >
                         <img src={group.icon} alt={group.name} className="h-10 w-10 rounded-full object-cover" />
                         <span>
-                          <span className="block text-sm font-medium text-cyan-100">{group.name}</span>
-                          <span className="block text-xs text-slate-400">{group.members.length} members</span>
+                          <span className="block text-sm font-medium text-wl-title">{group.name}</span>
+                          <span className="block text-xs text-wl-muted">{group.members.length} members</span>
                         </span>
                       </button>
                     );
@@ -97,7 +97,7 @@ export default function ChatPage() {
                 <button
                   onClick={() => setGroupPanelOpen(true)}
                   type="button"
-                  className="group m-3 rounded-none border-4 border-transparent bg-transparent py-2.5 text-sm font-semibold text-cyan-300 transition [border-image:repeating-linear-gradient(45deg,#0891b2_0_6px,transparent_6px_12px)_4] hover:text-[#1ED760] hover:[border-image:repeating-linear-gradient(45deg,#1ED760_0_6px,transparent_6px_12px)_4]"
+                  className="group m-3 rounded-none border-4 border-transparent bg-transparent py-2.5 text-sm font-semibold text-wl-link transition [border-image:repeating-linear-gradient(45deg,#0891b2_0_6px,transparent_6px_12px)_4] hover:text-[#1ED760] hover:[border-image:repeating-linear-gradient(45deg,#1ED760_0_6px,transparent_6px_12px)_4]"
                 >
                   + Create Group
                 </button>
@@ -106,8 +106,8 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <div className="flex-1 bg-[#04385a]/40">
-          {!active && <div className="flex h-full items-center justify-center text-sm text-slate-500">Pick a conversation to get started</div>}
+        <div className="flex-1 bg-wl-panel/40">
+          {!active && <div className="flex h-full items-center justify-center text-sm text-wl-faint">Pick a conversation to get started</div>}
 
           {active?.type === 'friend' && (() => {
             const user = db.users[active.id];

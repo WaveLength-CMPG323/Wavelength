@@ -61,14 +61,14 @@ export default function HostProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#02182b] pb-24 text-white">
+    <div className="min-h-screen bg-wl-bg pb-24 text-wl-fg">
       <PageHeader title={profile?.displayName || 'Profile'} />
 
-      <div className="mx-auto my-8 max-w-4xl rounded-3xl border border-cyan-500/20 bg-[#04385a]/90 p-6 shadow-2xl backdrop-blur-md md:p-8">
+      <div className="mx-auto my-8 max-w-4xl rounded-3xl border border-cyan-500/20 bg-wl-panel/90 p-6 shadow-2xl backdrop-blur-md md:p-8">
         {loading ? (
-          <p className="text-sm text-slate-400">Loading…</p>
+          <p className="text-sm text-wl-muted">Loading…</p>
         ) : error ? (
-          <p className="text-sm text-red-400">{error}</p>
+          <p className="text-sm text-wl-danger">{error}</p>
         ) : (
           <div className="flex flex-col items-center gap-4 sm:flex-row">
             <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-cyan-400 bg-slate-300 shadow-md">
@@ -81,13 +81,13 @@ export default function HostProfilePage() {
               )}
             </div>
             <div className="flex-1 text-center sm:text-left">
-              <p className="text-lg font-semibold text-cyan-100">{profile?.displayName}</p>
+              <p className="text-lg font-semibold text-wl-title">{profile?.displayName}</p>
               {profile?.profileUrl && (
                 <a
                   href={profile.profileUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-cyan-300 underline hover:text-cyan-200"
+                  className="mt-1 inline-flex items-center gap-1 text-xs text-wl-link underline hover:text-wl-cyan"
                 >
                   <ExternalLink className="h-3 w-3" />
                   Open Spotify profile
@@ -101,7 +101,7 @@ export default function HostProfilePage() {
                   onClick={handleRequestChat}
                   disabled={chatRequestState === 'sending' || chatRequestState === 'sent'}
                   type="button"
-                  className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#543ab7] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4a319f] disabled:opacity-50"
+                  className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#543ab7] px-4 py-2 text-sm font-semibold text-[#ffffff] hover:bg-[#4a319f] disabled:opacity-50"
                 >
                   <MessageCircle className="h-4 w-4" />
                   {chatRequestState === 'sent'
@@ -110,7 +110,7 @@ export default function HostProfilePage() {
                       ? 'Sending…'
                       : 'Request Chat'}
                 </button>
-                {chatRequestState === 'error' && <p className="text-xs text-red-400">{chatRequestError}</p>}
+                {chatRequestState === 'error' && <p className="text-xs text-wl-danger">{chatRequestError}</p>}
               </div>
             )}
           </div>

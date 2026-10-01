@@ -1,12 +1,99 @@
 @import "tailwindcss";
 
-/* WaveLength deep-ocean theme. These are the only hand-picked colors used
-   across the app -- everything else composes from Tailwind's cyan/slate
-   scale so the product reads as one consistent thing. */
+/* ------------------------------------------------------------------ *
+ * WaveLength theme tokens
+ *
+ * Dark ("deep ocean") is the base. Light mode overrides the same tokens
+ * under [data-theme='light'], which ThemeContext sets on <html>
+ * (and index.html sets before first paint, so there's no flash).
+ *
+ * Components never use raw colours for surfaces/text -- they use the
+ * utilities generated from the @theme block below (bg-wl-bg, text-wl-fg,
+ * text-wl-link, ...), so a whole page re-themes by swapping these vars.
+ * ------------------------------------------------------------------ */
 :root {
-  --wl-bg: #02182b;      /* page shell */
-  --wl-panel: #04385a;   /* cards / panels */
-  --wl-accent: #1ED760;  /* Spotify green, primary CTA */
+  --wl-bg: #02182b;       /* page shell */
+  --wl-panel: #04385a;    /* cards / panels / inputs */
+  --wl-accent: #1ED760;   /* Spotify green, primary CTA (same in both themes) */
+
+  --wl-fg: #ffffff;       /* primary text */
+  --wl-title: #cffafe;    /* headings, nav text */
+  --wl-cyan: #a5f3fc;     /* emphasised secondary text */
+  --wl-link: #67e8f9;     /* links / hover text */
+  --wl-icon: #22d3ee;     /* icons, small accents */
+  --wl-soft: #cbd5e1;     /* body copy */
+  --wl-muted: #94a3b8;    /* captions */
+  --wl-faint: #64748b;    /* placeholders */
+  --wl-danger: #f87171;
+  --wl-scrim: rgba(0, 0, 0, 0.6); /* modal backdrop */
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --wl-bg: #e8f4fd;
+  --wl-panel: #ffffff;
+
+  --wl-fg: #0b2a43;
+  --wl-title: #0a3b5c;
+  --wl-cyan: #0c4a6e;
+  --wl-link: #0a6f9f;
+  --wl-icon: #0891b2;
+  --wl-soft: #2b4a63;
+  --wl-muted: #4d6b84;
+  --wl-faint: #6b8499;
+  --wl-danger: #dc2626;
+  --wl-scrim: rgba(8, 36, 58, 0.42);
+
+  color-scheme: light;
+}
+
+/* Registering the tokens as <color>s lets the browser interpolate them, so
+   *everything* built on them (pages, nav, panels, text) cross-fades during
+   a theme switch instead of snapping. */
+@property --wl-bg     { syntax: '<color>'; inherits: true; initial-value: #02182b; }
+@property --wl-panel  { syntax: '<color>'; inherits: true; initial-value: #04385a; }
+@property --wl-fg     { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
+@property --wl-title  { syntax: '<color>'; inherits: true; initial-value: #cffafe; }
+@property --wl-cyan   { syntax: '<color>'; inherits: true; initial-value: #a5f3fc; }
+@property --wl-link   { syntax: '<color>'; inherits: true; initial-value: #67e8f9; }
+@property --wl-icon   { syntax: '<color>'; inherits: true; initial-value: #22d3ee; }
+@property --wl-soft   { syntax: '<color>'; inherits: true; initial-value: #cbd5e1; }
+@property --wl-muted  { syntax: '<color>'; inherits: true; initial-value: #94a3b8; }
+@property --wl-faint  { syntax: '<color>'; inherits: true; initial-value: #64748b; }
+@property --wl-danger { syntax: '<color>'; inherits: true; initial-value: #f87171; }
+@property --wl-scrim  { syntax: '<color>'; inherits: true; initial-value: rgba(0, 0, 0, 0.6); }
+
+:root {
+  --wl-theme-duration: 1.2s;
+  transition:
+    --wl-bg var(--wl-theme-duration) ease,
+    --wl-panel var(--wl-theme-duration) ease,
+    --wl-fg var(--wl-theme-duration) ease,
+    --wl-title var(--wl-theme-duration) ease,
+    --wl-cyan var(--wl-theme-duration) ease,
+    --wl-link var(--wl-theme-duration) ease,
+    --wl-icon var(--wl-theme-duration) ease,
+    --wl-soft var(--wl-theme-duration) ease,
+    --wl-muted var(--wl-theme-duration) ease,
+    --wl-faint var(--wl-theme-duration) ease,
+    --wl-danger var(--wl-theme-duration) ease,
+    --wl-scrim var(--wl-theme-duration) ease;
+}
+
+@theme inline {
+  --color-wl-bg: var(--wl-bg);
+  --color-wl-panel: var(--wl-panel);
+  --color-wl-fg: var(--wl-fg);
+  --color-wl-title: var(--wl-title);
+  --color-wl-cyan: var(--wl-cyan);
+  --color-wl-link: var(--wl-link);
+  --color-wl-icon: var(--wl-icon);
+  --color-wl-soft: var(--wl-soft);
+  --color-wl-muted: var(--wl-muted);
+  --color-wl-faint: var(--wl-faint);
+  --color-wl-danger: var(--wl-danger);
+  --color-wl-scrim: var(--wl-scrim);
 }
 
 html, body, #root {
@@ -15,7 +102,11 @@ html, body, #root {
 
 body {
   background: var(--wl-bg);
-  color: #f1f5f9;
+  color: var(--wl-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --wl-theme-duration: 0.01s; }
 }
 
 /* Hides the scrollbar's visible track/thumb while leaving the element

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../data/AuthContext';
 import OceanNav from './OceanNav';
+import SkyScene from './SkyScene';
 import { useOceanCanvas, type OceanMarker } from './useOceanCanvas';
 import OceanSongPanel from './OceanSongPanel';
 import NotificationsPanel from '../notifications/NotificationsPanel';
@@ -99,6 +100,9 @@ export default function OceanPage() {
 
   return (
     <div ref={containerRef} className="relative h-screen w-full overflow-hidden">
+      {/* Sky (gradient, sun/moon, clouds, birds, stars) sits behind the canvas,
+          which only paints the sea and waves. */}
+      <SkyScene />
       <canvas ref={canvasRef} className={`absolute inset-0 ${hoveredId ? 'cursor-pointer' : 'cursor-default'}`} />
 
       <OceanNav
@@ -108,13 +112,13 @@ export default function OceanPage() {
       />
 
       {hoveredGroup && (
-        <div className="pointer-events-none absolute left-1/2 top-16 z-20 -translate-x-1/2 rounded-full border border-cyan-500/30 bg-[#02182b]/90 px-4 py-1.5 text-xs font-medium text-cyan-100">
+        <div className="pointer-events-none absolute left-1/2 top-16 z-20 -translate-x-1/2 rounded-full border border-cyan-500/30 bg-wl-bg/90 px-4 py-1.5 text-xs font-medium text-wl-title">
           {hoveredGroup.trackName} — {hoveredGroup.artist}
         </div>
       )}
 
       {isEmpty && (
-        <p className="pointer-events-none absolute left-1/2 top-1/3 z-10 max-w-xs -translate-x-1/2 text-center text-sm text-cyan-100/60">
+        <p className="pointer-events-none absolute left-1/2 top-1/3 z-10 max-w-xs -translate-x-1/2 text-center text-sm text-wl-title/60">
           No one's listening yet — play something on Spotify to start a wave.
         </p>
       )}

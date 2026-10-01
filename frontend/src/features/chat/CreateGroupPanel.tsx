@@ -37,17 +37,17 @@ export default function CreateGroupPanel({
     <NavPanel open={open} onClose={onClose} title="Create Group">
       <div className="flex flex-col gap-4 px-5 py-4">
         <div>
-          <label className="mb-1 block text-sm font-semibold text-cyan-300">Group name</label>
+          <label className="mb-1 block text-sm font-semibold text-wl-link">Group name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Late Night Lo-fi"
-            className="w-full rounded-lg border border-cyan-500/20 bg-[#02182b] px-3 py-2 text-sm text-white placeholder:text-slate-500"
+            className="w-full rounded-lg border border-cyan-500/20 bg-wl-bg px-3 py-2 text-sm text-wl-fg placeholder:text-wl-faint"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-cyan-300">Choose an icon</label>
+          <label className="mb-1 block text-sm font-semibold text-wl-link">Choose an icon</label>
           <div className="flex gap-2">
             {PREDEFINED_ICONS.map((opt) => (
               <button
@@ -63,11 +63,11 @@ export default function CreateGroupPanel({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-cyan-300">Add friends</label>
-          {friendIds.length === 0 && <p className="text-xs text-slate-500">No friends yet to add.</p>}
+          <label className="mb-1 block text-sm font-semibold text-wl-link">Add friends</label>
+          {friendIds.length === 0 && <p className="text-xs text-wl-faint">No friends yet to add.</p>}
           <div className="flex flex-col gap-1">
             {friendIds.map((id) => (
-              <label key={id} className="flex items-center gap-2 text-sm text-slate-200">
+              <label key={id} className="flex items-center gap-2 text-sm text-wl-soft">
                 <input type="checkbox" checked={members.includes(id)} onChange={() => toggleMember(id)} />
                 {db.users[id].name}
               </label>

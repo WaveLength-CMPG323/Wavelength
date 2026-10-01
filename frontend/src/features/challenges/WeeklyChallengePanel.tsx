@@ -52,35 +52,35 @@ export default function WeeklyChallengePanel({ open, onClose }: { open: boolean;
   return (
     <NavPanel open={open} onClose={onClose} title="Weekly Challenge" wide>
       <div className="flex flex-col gap-4 px-6 py-5">
-        <div className="rounded-xl border border-cyan-500/20 bg-[#02233b]/80 p-4 shadow-md backdrop-blur-md">
+        <div className="rounded-xl border border-cyan-500/20 bg-wl-bg/80 p-4 shadow-md backdrop-blur-md">
           <div className="flex items-start justify-between gap-2">
-            <span className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/20 px-2 py-0.5 text-[10px] font-medium text-cyan-300">
+            <span className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/20 px-2 py-0.5 text-[10px] font-medium text-wl-link">
               <OceanWaveIcon className="h-3 w-3" />
               {db.challenge.theme}
             </span>
-            <span className="shrink-0 text-[11px] text-slate-400">
+            <span className="shrink-0 text-[11px] text-wl-muted">
               {remaining > 0 ? `${formatCountdown(remaining)} left` : 'Closed'}
             </span>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-slate-300">
+          <p className="mt-2 text-xs leading-relaxed text-wl-soft">
             Share a track that captures this week's theme. Entering unlocks a themed profile border while the challenge runs.
           </p>
           <div className="mt-3 flex items-center justify-between border-t border-cyan-500/10 pt-3 text-xs">
-            <span className="flex items-center gap-1 text-[11px] text-slate-400">
-              <Users className="h-3.5 w-3.5 text-cyan-400" />
+            <span className="flex items-center gap-1 text-[11px] text-wl-muted">
+              <Users className="h-3.5 w-3.5 text-wl-icon" />
               {mockParticipants(db.challenge.theme)} joined
             </span>
-            {alreadyEntered && <span className="font-semibold text-cyan-300">You're in ✓</span>}
+            {alreadyEntered && <span className="font-semibold text-wl-link">You're in ✓</span>}
           </div>
         </div>
 
-        <div className="flex h-32 items-center justify-center overflow-hidden rounded-xl border border-cyan-500/20 bg-[#02182b]">
+        <div className="flex h-32 items-center justify-center overflow-hidden rounded-xl border border-cyan-500/20 bg-wl-bg">
           {submittedSong ? (
             <div className="h-24 w-24 overflow-hidden rounded-lg">
               <Cover song={submittedSong} />
             </div>
           ) : (
-            <span className="px-6 text-center text-xs text-slate-400">
+            <span className="px-6 text-center text-xs text-wl-muted">
               Themed border reward — upload a song to unlock
             </span>
           )}
@@ -93,15 +93,15 @@ export default function WeeklyChallengePanel({ open, onClose }: { open: boolean;
             value={query}
             onChange={(e) => handleQuery(e.target.value)}
             placeholder="Search for a song to upload…"
-            className="w-full rounded-full border border-cyan-500/20 bg-[#02182b] px-4 py-2 text-sm text-white placeholder:text-slate-500 disabled:opacity-50"
+            className="w-full rounded-full border border-cyan-500/20 bg-wl-bg px-4 py-2 text-sm text-wl-fg placeholder:text-wl-faint disabled:opacity-50"
           />
           {results.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full rounded-xl border border-cyan-500/20 bg-[#04385a] shadow-lg">
+            <div className="absolute z-10 mt-1 w-full rounded-xl border border-cyan-500/20 bg-wl-panel shadow-lg">
               {results.map((s) => (
                 <button
                   key={s.title}
                   onClick={() => { setPending(s); setQuery(`${s.title} — ${s.artist}`); setResults([]); }}
-                  className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-white hover:bg-cyan-500/10"
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-wl-fg hover:bg-cyan-500/10"
                   type="button"
                 >
                   <div className="h-8 w-8 shrink-0 overflow-hidden rounded"><Cover song={s} /></div>
@@ -122,9 +122,9 @@ export default function WeeklyChallengePanel({ open, onClose }: { open: boolean;
           </button>
         )}
         {alreadyEntered && (
-          <div className="text-center text-sm font-medium text-cyan-300">Entered — good luck!</div>
+          <div className="text-center text-sm font-medium text-wl-link">Entered — good luck!</div>
         )}
-        <div className="text-center text-xs text-slate-500">Limited to one entry per week.</div>
+        <div className="text-center text-xs text-wl-faint">Limited to one entry per week.</div>
       </div>
     </NavPanel>
   );
