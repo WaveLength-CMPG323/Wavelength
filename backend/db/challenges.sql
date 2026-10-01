@@ -24,6 +24,24 @@ CREATE TABLE challenge_submissions (
   UNIQUE(challenge_id, spotify_user_id)
 );
 
+-- 1. List of available cosmetic rewards
+CREATE TABLE rewards (
+  reward_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  effect_type TEXT NOT NULL, -- e.g., 'profile_aura', 'song_marker', or 'both'
+  css_class TEXT NOT NULL   -- e.g., 'cyan-glow', 'gold-shimmer'
+);
+
+-- 2. Track which users have unlocked and equipped which cosmetics
+CREATE TABLE user_cosmetics (
+  id SERIAL PRIMARY KEY,
+  spotify_user_id TEXT NOT NULL,
+  reward_id TEXT REFERENCES rewards(reward_id),
+  is_equipped BOOLEAN DEFAULT FALSE,
+  UNIQUE(spotify_user_id, reward_id)
+);
+
 -- 1. Songs from before 2000
 INSERT INTO challenges (theme, description, reward_id, deadline, is_active)
 VALUES (

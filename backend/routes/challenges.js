@@ -150,6 +150,15 @@ router.post('/submit', async (req, res) => {
       [challengeId, spotifyUserId, trackId, trackTitle, artistName, albumArtUrl]
     );
 
+    if (challenge.reward_id) {
+      await pool.query(
+        `INSERT INTO user_cosmetics (spotify_user_id, reward_id, is_equipped)
+         VALUES ($1, $2, FALSE)
+         ON CONFLICT (spotify_user_id, reward_id) DO NOTHING`,
+        [spotifyUserId, challenge.reward_id]
+      );
+    }
+
     res.json({ 
       success: true, 
       submission: { trackId, title: trackTitle, artist: artistName, cover: albumArtUrl } 
