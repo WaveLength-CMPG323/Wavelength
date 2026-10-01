@@ -19,7 +19,6 @@ interface Challenge {
   mySubmission?: ChallengeSubmission | null;
 }
 
-// Local interface for challenge search results
 interface ChallengeTrack {
   id: string;
   title: string;
@@ -39,6 +38,7 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
   const [results, setResults] = useState<ChallengeTrack[]>([]);
   const [pending, setPending] = useState<ChallengeTrack | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Fetch active challenge from backend when panel opens
   useEffect(() => {
@@ -66,7 +66,6 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
     return () => clearInterval(id);
   }, [open, challenge]);
 
-  // Format countdown helper
   function formatCountdown(ms: number): string {
     if (ms <= 0) return 'Closed';
     const hours = Math.floor(ms / (1000 * 60 * 60));
@@ -81,6 +80,7 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
   async function handleQuery(value: string) {
     setQuery(value);
     setPending(null);
+    setErrorMessage(null);
     if (!value.trim()) {
       setResults([]);
       return;
@@ -105,6 +105,7 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
   async function submit() {
     if (!pending || !challenge) return;
     setSubmitting(true);
+    setErrorMessage(null);
     try {
       const response = await axios.post('/challenge/submit', {
         challengeId: challenge.id,
@@ -123,8 +124,9 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
       setQuery('');
       setResults([]);
       setPending(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Challenge submission failed:', err);
+      setErrorMessage(err.response?.data?.error || 'Challenge submission failed');
     } finally {
       setSubmitting(false);
     }
@@ -199,7 +201,7 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
               {results.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => { setPending(s); setQuery(`${s.title} — ${s.artist}`); setResults([]); }}
+                  onClick={() => { setPending(s); setQuery(`${s.title} — ${s.artist}`); setResults([]); setErrorMessage(null); }}
                   className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-white hover:bg-cyan-500/10"
                   type="button"
                 >
@@ -212,6 +214,12 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
             </div>
           )}
         </div>
+
+        {errorMessage && (
+          <div className="rounded-lg border border-red-500/25 bg-red-500/10 p-3 text-xs text-red-300">
+            {errorMessage}
+          </div>
+        )}
 
         {pending && !alreadyEntered && (
           <button

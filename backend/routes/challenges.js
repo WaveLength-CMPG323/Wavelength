@@ -3,6 +3,7 @@ const router = express.Router();
 const axios = require('axios');
 const { Pool } = require('pg');
 const { getValidAccessToken } = require('../lib/authHelper');
+const { validateChallengeSubmission } = require('../lib/challengesValidation');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -95,7 +96,7 @@ router.get('/search', async (req, res) => {
   }
 });
 
-// 3. POST /challenge/submit - Submit track for active challenge
+// 3. POST /challenge/submit - Submit track with theme validation
 router.post('/submit', async (req, res) => {
   const { challengeId, trackId } = req.body;
   
@@ -105,6 +106,17 @@ router.post('/submit', async (req, res) => {
 
   try {
     const accessToken = await getValidAccessToken(req.sessionID);
+
+    // Fetch challenge theme from database
+    const challengeRes = await pool.query(
+      `SELECT id, theme FROM challenges WHERE id = $1 AND is_active = TRUE`,
+      [challengeId]
+    );
+
+    if (challengeRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Active challenge not found' });
+    }
+    const challenge = challengeRes.rows[0];
 
     // Get permanent Spotify user ID
     const userProfileRes = await axios.get('https://api.spotify.com/v1/me', {
@@ -118,6 +130,13 @@ router.post('/submit', async (req, res) => {
     });
 
     const trackData = spotifyResponse.data;
+
+    // Validate track against the challenge theme using our modular validator
+    const validationResult = validateChallengeSubmission(challenge.theme, trackData);
+    if (!validationResult.isValid) {
+      return res.status(400).json({ error: validationResult.message });
+    }
+
     const trackTitle = trackData.name;
     const artistName = trackData.artists.map(artist => artist.name).join(', ');
     const albumArtUrl = trackData.album.images?.[0]?.url || null;
