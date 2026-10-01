@@ -1,53 +1,139 @@
 import { useEffect, useState } from 'react';
-import { Users } from 'lucide-react';
+import axios from 'axios';
 import NavPanel from '../../components/NavPanel';
-import Cover from '../../components/Cover';
 import { OceanWaveIcon } from '../../components/icons/OceanWaveIcon';
-import { useData } from '../../data/DataContext';
-import { formatCountdown, searchSpotifyCatalog, randomCover } from '../../data/mockData';
-import type { CatalogEntry } from '../../data/types';
 
-// Deterministic mock "X joined" count, purely cosmetic (we don't track this).
-function mockParticipants(theme: string): number {
-  let hash = 0;
-  for (let i = 0; i < theme.length; i++) hash = theme.charCodeAt(i) + ((hash << 5) - hash);
-  return 40 + (Math.abs(hash) % 260);
+interface ChallengeSubmission {
+  trackId: string;
+  title: string;
+  artist: string;
+  cover: string;
 }
 
-export default function WeeklyChallengePanel({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { db, mutate } = useData();
-  const [remaining, setRemaining] = useState(db.challenge.deadline - Date.now());
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<CatalogEntry[]>([]);
-  const [pending, setPending] = useState<CatalogEntry | null>(null);
+interface Challenge {
+  id: number;
+  theme: string;
+  deadline: string;
+  mySubmission?: ChallengeSubmission | null;
+}
 
+interface SearchResultTrack {
+  id: string;
+  title: string;
+  artist: string;
+  cover: string;
+}
+
+interface WeeklyChallengePanelProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengePanelProps) {
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [remaining, setRemaining] = useState<number>(0);
+  const [query, setQuery] = useState<string>('');
+  const [results, setResults] = useState<SearchResultTrack[]>([]);
+  const [pending, setPending] = useState<SearchResultTrack | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Fetch active challenge from backend when panel opens
   useEffect(() => {
     if (!open) return;
-    const id = setInterval(() => setRemaining(db.challenge.deadline - Date.now()), 1000);
+    
+    async function fetchActiveChallenge() {
+      try {
+        const res = await axios.get<Challenge>('/challenge/active');
+        setChallenge(res.data);
+        const deadlineMs = new Date(res.data.deadline).getTime();
+        setRemaining(deadlineMs - Date.now());
+      } catch (err) {
+        console.error('Failed to fetch active challenge:', err);
+      }
+    }
+    
+    fetchActiveChallenge();
+  }, [open]);
+
+  // Countdown timer ticker
+  useEffect(() => {
+    if (!open || !challenge) return;
+    const deadlineMs = new Date(challenge.deadline).getTime();
+    const id = setInterval(() => setRemaining(deadlineMs - Date.now()), 1000);
     return () => clearInterval(id);
-  }, [open, db.challenge.deadline]);
+  }, [open, challenge]);
 
-  const alreadyEntered = !!db.challenge.mySubmission;
-  const submittedSong = db.challenge.mySubmission ? db.songs[db.challenge.mySubmission.songId] : null;
+  // Format countdown helper
+  function formatCountdown(ms: number): string {
+    if (ms <= 0) return 'Closed';
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    if (days > 0) return `${days}d ${hours % 24}h left`;
+    return `${hours}h left`;
+  }
 
-  function handleQuery(value: string) {
+  const alreadyEntered = !!challenge?.mySubmission;
+
+  // Search Spotify catalog via backend proxy route
+  async function handleQuery(value: string) {
     setQuery(value);
     setPending(null);
-    setResults(searchSpotifyCatalog(value));
+    if (!value.trim()) {
+      setResults([]);
+      return;
+    }
+    try {
+      const res = await axios.get<{ results: SearchResultTrack[] }>(`/challenge/search?q=${encodeURIComponent(value)}`);
+      setResults(res.data.results || []);
+    } catch (err) {
+      console.error('Spotify catalog search failed:', err);
+    }
   }
 
-  function submit() {
-    if (!pending) return;
-    const newId = 'me-' + Date.now();
-    mutate((d) => {
-      d.songs[newId] = { id: newId, title: pending.title, artist: pending.artist, cover: randomCover(pending.title + pending.artist), ownerId: 'me' };
-      d.floaterOrder.push(newId);
-      d.challenge.mySubmission = { songId: newId };
-    });
-    setQuery('');
-    setResults([]);
-    setPending(null);
+  // Submit entry to backend API
+  async function submit() {
+    if (!pending || !challenge) return;
+    setSubmitting(true);
+    try {
+      const response = await axios.post<{ submission: ChallengeSubmission }>('/challenge/submit', {
+        challengeId: challenge.id,
+        trackId: pending.id
+      });
+      
+      setChallenge((prev) => prev ? {
+        ...prev,
+        mySubmission: {
+          trackId: pending.id,
+          title: response.data.submission.title,
+          artist: response.data.submission.artist,
+          cover: response.data.submission.cover
+        }
+      } : null);
+      setQuery('');
+      setResults([]);
+      setPending(null);
+    } catch (err) {
+      console.error('Challenge submission failed:', err);
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  if (!challenge) {
+    return (
+      <NavPanel open={open} onClose={onClose} title="Weekly Challenge" wide>
+        <div className="flex h-48 items-center justify-center text-xs text-slate-400">
+          Loading challenge...
+        </div>
+      </NavPanel>
+    );
+  }
+
+  const submittedSong = challenge.mySubmission ? {
+    title: challenge.mySubmission.title,
+    artist: challenge.mySubmission.artist,
+    cover: challenge.mySubmission.cover
+  } : pending;
 
   return (
     <NavPanel open={open} onClose={onClose} title="Weekly Challenge" wide>
@@ -56,32 +142,34 @@ export default function WeeklyChallengePanel({ open, onClose }: { open: boolean;
           <div className="flex items-start justify-between gap-2">
             <span className="flex items-center gap-1.5 rounded border border-cyan-500/30 bg-cyan-500/20 px-2 py-0.5 text-[10px] font-medium text-cyan-300">
               <OceanWaveIcon className="h-3 w-3" />
-              {db.challenge.theme}
+              {challenge.theme}
             </span>
             <span className="shrink-0 text-[11px] text-slate-400">
-              {remaining > 0 ? `${formatCountdown(remaining)} left` : 'Closed'}
+              {remaining > 0 ? formatCountdown(remaining) : 'Closed'}
             </span>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
             Share a track that captures this week's theme. Entering unlocks a themed profile border while the challenge runs.
           </p>
-          <div className="mt-3 flex items-center justify-between border-t border-cyan-500/10 pt-3 text-xs">
-            <span className="flex items-center gap-1 text-[11px] text-slate-400">
-              <Users className="h-3.5 w-3.5 text-cyan-400" />
-              {mockParticipants(db.challenge.theme)} joined
-            </span>
+          <div className="mt-3 flex items-center justify-end border-t border-cyan-500/10 pt-3 text-xs">
             {alreadyEntered && <span className="font-semibold text-cyan-300">You're in ✓</span>}
           </div>
         </div>
 
         <div className="flex h-32 items-center justify-center overflow-hidden rounded-xl border border-cyan-500/20 bg-[#02182b]">
           {submittedSong ? (
-            <div className="h-24 w-24 overflow-hidden rounded-lg">
-              <Cover song={submittedSong} />
+            <div className="flex items-center gap-3 px-4">
+              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+                <img src={submittedSong.cover} alt={submittedSong.title} className="h-full w-full object-cover" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-semibold text-white">{submittedSong.title}</p>
+                <p className="text-[11px] text-slate-400">{submittedSong.artist}</p>
+              </div>
             </div>
           ) : (
             <span className="px-6 text-center text-xs text-slate-400">
-              Themed border reward — upload a song to unlock
+              Themed border reward — search and select a song to unlock
             </span>
           )}
         </div>
@@ -92,19 +180,21 @@ export default function WeeklyChallengePanel({ open, onClose }: { open: boolean;
             disabled={alreadyEntered}
             value={query}
             onChange={(e) => handleQuery(e.target.value)}
-            placeholder="Search for a song to upload…"
+            placeholder="Search Spotify for a song to submit…"
             className="w-full rounded-full border border-cyan-500/20 bg-[#02182b] px-4 py-2 text-sm text-white placeholder:text-slate-500 disabled:opacity-50"
           />
           {results.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full rounded-xl border border-cyan-500/20 bg-[#04385a] shadow-lg">
+            <div className="absolute z-10 mt-1 w-full rounded-xl border border-cyan-500/20 bg-[#04385a] shadow-lg max-h-60 overflow-y-auto">
               {results.map((s) => (
                 <button
-                  key={s.title}
+                  key={s.id}
                   onClick={() => { setPending(s); setQuery(`${s.title} — ${s.artist}`); setResults([]); }}
                   className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-white hover:bg-cyan-500/10"
                   type="button"
                 >
-                  <div className="h-8 w-8 shrink-0 overflow-hidden rounded"><Cover song={s} /></div>
+                  <div className="h-8 w-8 shrink-0 overflow-hidden rounded">
+                    <img src={s.cover} alt={s.title} className="h-full w-full object-cover" />
+                  </div>
                   <span>{s.title} — {s.artist}</span>
                 </button>
               ))}
@@ -115,10 +205,11 @@ export default function WeeklyChallengePanel({ open, onClose }: { open: boolean;
         {pending && !alreadyEntered && (
           <button
             onClick={submit}
-            className="rounded-full bg-cyan-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+            disabled={submitting}
+            className="rounded-full bg-cyan-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
             type="button"
           >
-            Submit
+            {submitting ? 'Submitting...' : 'Submit Entry'}
           </button>
         )}
         {alreadyEntered && (
