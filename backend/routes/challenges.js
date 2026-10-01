@@ -9,9 +9,8 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 // 1. GET /challenge/active - Fetch current active challenge and check user submission
 router.get('/active', async (req, res) => {
   try {
-    // Get active challenge from database
     const challengeResult = await pool.query(
-      `SELECT id, theme, deadline, is_active, created_at 
+      `SELECT id, theme, description, reward_id, deadline, is_active, created_at 
        FROM challenges 
        WHERE is_active = TRUE 
        LIMIT 1`
@@ -49,12 +48,14 @@ router.get('/active', async (req, res) => {
         };
       }
     } catch (sessionErr) {
-      // User is not logged in yet, which is fine; mySubmission remains null
+      // User is not logged in yet; mySubmission remains null
     }
 
     res.json({
       id: activeChallenge.id,
       theme: activeChallenge.theme,
+      description: activeChallenge.description,
+      rewardId: activeChallenge.reward_id,
       deadline: activeChallenge.deadline,
       mySubmission
     });

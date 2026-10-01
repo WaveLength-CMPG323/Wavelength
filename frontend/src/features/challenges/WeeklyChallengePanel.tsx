@@ -13,11 +13,14 @@ interface ChallengeSubmission {
 interface Challenge {
   id: number;
   theme: string;
+  description: string;
+  rewardId?: string;
   deadline: string;
   mySubmission?: ChallengeSubmission | null;
 }
 
-interface SearchResultTrack {
+// Local interface for challenge search results
+interface ChallengeTrack {
   id: string;
   title: string;
   artist: string;
@@ -33,8 +36,8 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [remaining, setRemaining] = useState<number>(0);
   const [query, setQuery] = useState<string>('');
-  const [results, setResults] = useState<SearchResultTrack[]>([]);
-  const [pending, setPending] = useState<SearchResultTrack | null>(null);
+  const [results, setResults] = useState<ChallengeTrack[]>([]);
+  const [pending, setPending] = useState<ChallengeTrack | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Fetch active challenge from backend when panel opens
@@ -83,8 +86,16 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
       return;
     }
     try {
-      const res = await axios.get<{ results: SearchResultTrack[] }>(`/challenge/search?q=${encodeURIComponent(value)}`);
-      setResults(res.data.results || []);
+      const res = await axios.get(`/challenge/search?q=${encodeURIComponent(value)}`);
+      
+      const mappedResults: ChallengeTrack[] = (res.data.results || []).map((track: any) => ({
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        cover: track.cover
+      }));
+
+      setResults(mappedResults);
     } catch (err) {
       console.error('Spotify catalog search failed:', err);
     }
@@ -95,7 +106,7 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
     if (!pending || !challenge) return;
     setSubmitting(true);
     try {
-      const response = await axios.post<{ submission: ChallengeSubmission }>('/challenge/submit', {
+      const response = await axios.post('/challenge/submit', {
         challengeId: challenge.id,
         trackId: pending.id
       });
@@ -149,7 +160,7 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
             </span>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
-            Share a track that captures this week's theme. Entering unlocks a themed profile border while the challenge runs.
+            {challenge.description}
           </p>
           <div className="mt-3 flex items-center justify-end border-t border-cyan-500/10 pt-3 text-xs">
             {alreadyEntered && <span className="font-semibold text-cyan-300">You're in ✓</span>}
@@ -169,7 +180,7 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
             </div>
           ) : (
             <span className="px-6 text-center text-xs text-slate-400">
-              Themed border reward — search and select a song to unlock
+              Reward ({challenge.rewardId || 'Exclusive'}) — search and select a song to unlock
             </span>
           )}
         </div>
