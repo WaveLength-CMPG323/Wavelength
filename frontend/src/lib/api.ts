@@ -3,11 +3,18 @@
 // cookie set by /auth/callback rides along - that cookie is how the
 // backend knows which Spotify account/session is asking. See socket.ts for
 // the companion Socket.IO connection used for live 'oceanUpdate' events.
+import { PREVIEW_MODE } from './devPreview';
 import type { ChatRequest, HostProfile, MyPlayback, PublicPlaylist, RecentTrack, SpotifyProfile } from '../data/types';
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  // DEV preview mode: answer from the in-browser fake backend instead.
+  // (dynamic import + literal DEV check => dropped entirely from production builds)
+  if (import.meta.env.DEV && PREVIEW_MODE) {
+    const { previewFetch } = await import('./previewData');
+    return previewFetch(path, options);
+  }
   return fetch(`${API_URL}${path}`, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...options.headers },

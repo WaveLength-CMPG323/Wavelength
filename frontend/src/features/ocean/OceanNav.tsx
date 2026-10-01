@@ -47,7 +47,7 @@ export default function OceanNav({ onSearch, onOpenNotifications, onOpenChalleng
       <div className="flex items-center gap-4">
         {isLoggedIn ? (
           <>
-            <Link to="/profile" aria-label="Your profile" className="flex items-center">
+            <Link to="/profile" aria-label="Your profile" data-tour="profile" className="flex items-center">
               <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-700 ring-2 ring-transparent hover:ring-cyan-400">
                 {profile?.profileImage ? (
                   <img src={profile.profileImage} alt="Your Spotify profile" className="h-full w-full object-cover" />
@@ -58,17 +58,18 @@ export default function OceanNav({ onSearch, onOpenNotifications, onOpenChalleng
                 )}
               </span>
             </Link>
-            <Link to="/chat" className="relative text-sm font-medium hover:text-cyan-300">
+            <Link to="/chat" data-tour="chat" className="relative text-sm font-medium hover:text-cyan-300">
               Chat
               {db.hasChatDot && <span className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-red-500" />}
             </Link>
-            <button onClick={onOpenNotifications} type="button" className="relative text-sm font-medium hover:text-cyan-300">
+            <button onClick={onOpenNotifications} type="button" data-tour="notifications" className="relative text-sm font-medium hover:text-cyan-300">
               Notifications
               {pendingCount > 0 && <span className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-red-500" />}
             </button>
             <button
               onClick={onOpenChallenge}
               type="button"
+              data-tour="challenge"
               className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/20"
             >
               Weekly Challenge
@@ -83,7 +84,7 @@ export default function OceanNav({ onSearch, onOpenNotifications, onOpenChalleng
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-[#04385a]/60 px-3 py-1.5">
+        <div data-tour="search" className="flex items-center gap-2 rounded-full border border-cyan-500/20 bg-[#04385a]/60 px-3 py-1.5">
           <Search className="h-4 w-4 text-cyan-400" />
           <input
             type="text"

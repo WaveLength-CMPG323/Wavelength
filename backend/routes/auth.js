@@ -1,24 +1,24 @@
-const express = require('express');
-const crypto = require('crypto');
+const express = require("express");
+const crypto = require("crypto");
 const router = express.Router();
 
-const { exchangeCodeForTokens, getMyProfile } = require('../lib/spotifyClient');
-const { saveTokens, getTokens } = require('../db/tokenStore');
+const { exchangeCodeForTokens, getMyProfile } = require("../lib/spotifyClient");
+const { saveTokens, getTokens } = require("../db/tokenStore");
 
 const { SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI, FRONTEND_URL } = process.env;
 
 const SCOPES =
-  'user-read-currently-playing user-read-playback-state user-modify-playback-state ' +
-  'user-read-email user-read-recently-played playlist-read-private';
+  "user-read-currently-playing user-read-playback-state user-modify-playback-state " +
+  "user-read-email user-read-recently-played playlist-read-private";
 
 // GET /auth/login - frontend sends the user here to start the flow
-router.get('/login', (req, res) => {
-  const state = crypto.randomBytes(16).toString('hex');
-  res.cookie('spotify_auth_state', state, { httpOnly: true, sameSite: 'lax' });
+router.get("/login", (req, res) => {
+  const state = crypto.randomBytes(16).toString("hex");
+  res.cookie("spotify_auth_state", state, { httpOnly: true, sameSite: "lax" });
 
   const params = new URLSearchParams({
     client_id: SPOTIFY_CLIENT_ID,
-    response_type: 'code',
+    response_type: "code",
     redirect_uri: SPOTIFY_REDIRECT_URI,
     scope: SCOPES,
     state,
@@ -28,7 +28,7 @@ router.get('/login', (req, res) => {
 });
 
 // GET /auth/callback - Spotify redirects the browser back here
-router.get('/callback', async (req, res) => {
+router.get("/callback", async (req, res) => {
   const { code, state, error } = req.query;
   const storedState = req.cookies?.spotify_auth_state;
 
@@ -43,7 +43,8 @@ router.get('/callback', async (req, res) => {
   }
 
   try {
-    const { access_token, refresh_token, expires_in } = await exchangeCodeForTokens(code);
+    const { access_token, refresh_token, expires_in } =
+      await exchangeCodeForTokens(code);
 
     // Each browser gets its own session (see server.js), so req.sessionID
     // uniquely identifies this person without needing real accounts yet.
@@ -67,12 +68,12 @@ router.get('/callback', async (req, res) => {
       profileImage: profile.profileImage,
     });
 
-    res.clearCookie('spotify_auth_state');
+    res.clearCookie("spotify_auth_state");
     // The Ocean page is the frontend's root route ("/"), not "/ocean" -
     // see src/App.tsx.
     res.redirect(`${FRONTEND_URL}/`);
   } catch (err) {
-    console.error('Token exchange failed:', err.response?.data || err.message);
+    console.error("Token exchange failed:", err.response?.data || err.message);
     res.redirect(`${FRONTEND_URL}/login?error=token_exchange_failed`);
   }
 });
@@ -80,7 +81,7 @@ router.get('/callback', async (req, res) => {
 // GET /auth/me - lets the frontend ask "is this browser logged in?" on
 // load (and after the OAuth redirect lands back on the Ocean page), and
 // get the real Spotify profile info to display, without exposing tokens.
-router.get('/me', async (req, res) => {
+router.get("/me", async (req, res) => {
   try {
     const stored = await getTokens(req.sessionID);
     if (!stored) {
@@ -97,7 +98,7 @@ router.get('/me', async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('auth/me failed:', err.message);
+    console.error("auth/me failed:", err.message);
     res.status(500).json({ loggedIn: false, profile: null });
   }
 });
@@ -107,13 +108,13 @@ router.get('/me', async (req, res) => {
 // Destroys the session so /auth/me reports logged-out afterwards. This
 // doesn't revoke the Spotify token itself - Spotify has no simple client
 // revoke endpoint, so it's just left to expire naturally.
-router.get('/logout', (req, res) => {
+router.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      console.error('Logout failed:', err.message);
-      return res.status(500).json({ error: 'Could not log out' });
+      console.error("Logout failed:", err.message);
+      return res.status(500).json({ error: "Could not log out" });
     }
-    res.clearCookie('connect.sid');
+    res.clearCookie("connect.sid");
     res.json({ success: true });
   });
 });

@@ -6,18 +6,38 @@ import { useOceanCanvas, type OceanMarker } from './useOceanCanvas';
 import OceanSongPanel from './OceanSongPanel';
 import NotificationsPanel from '../notifications/NotificationsPanel';
 import WeeklyChallengePanel from '../challenges/WeeklyChallengePanel';
+import OceanTutorial, { hasSeenTutorial, markTutorialSeen, resetTutorialSeen } from '../tutorial/OceanTutorial';
+import DevPreviewBadge from '../tutorial/DevPreviewBadge';
 import { getSocket } from '../../lib/socket';
 import { fetchCurrentlyPlaying } from '../../lib/api';
 import type { OceanGroup } from '../../data/types';
 
 export default function OceanPage() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, loading } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [query, setQuery] = useState('');
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(params.get('song'));
   const [notifOpen, setNotifOpen] = useState(false);
   const [challengeOpen, setChallengeOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+
+  // Auto-start the tutorial the first time a logged-in user lands here
+  // (or any time with ?tutorial=1, handy while developing it).
+  useEffect(() => {
+    if (loading || !isLoggedIn) return;
+    if (params.get('tutorial') === '1' || !hasSeenTutorial()) setTutorialOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, isLoggedIn]);
+
+  function closeTutorial() {
+    markTutorialSeen(); // skipping counts as seen, so we don't nag
+    setTutorialOpen(false);
+  }
+  function replayTutorial() {
+    resetTutorialSeen();
+    setTutorialOpen(true);
+  }
 
   // Live groups (one per track currently playing across all logged-in
   // users), pushed over Socket.IO by the backend's poller roughly once a
@@ -122,6 +142,9 @@ export default function OceanPage() {
       <OceanSongPanel group={selectedGroup} myTrackId={myTrackId} onClose={() => setSelectedTrackId(null)} />
       <NotificationsPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
       <WeeklyChallengePanel open={challengeOpen} onClose={() => setChallengeOpen(false)} />
+
+      <OceanTutorial open={tutorialOpen} onClose={closeTutorial} />
+      <DevPreviewBadge onReplayTutorial={replayTutorial} />
     </div>
   );
 }

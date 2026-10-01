@@ -1,5 +1,7 @@
 import { io, type Socket } from 'socket.io-client';
 import { API_URL } from './api';
+import { PREVIEW_MODE } from './devPreview';
+import { createPreviewSocket } from './previewData';
 
 // One shared Socket.IO connection for the whole app, reused across
 // components/re-renders rather than opened per-mount. The backend
@@ -11,7 +13,7 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io(API_URL, { withCredentials: true });
+    socket = import.meta.env.DEV && PREVIEW_MODE ? createPreviewSocket() : io(API_URL, { withCredentials: true });
   }
   return socket;
 }

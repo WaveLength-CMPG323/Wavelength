@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { fetchMe, logout as apiLogout, spotifyLoginUrl } from '../lib/api';
 import type { SpotifyProfile } from './types';
+import { PREVIEW_MODE } from '../lib/devPreview';
 
 // Real Spotify auth, backed by the Express backend's session cookie (see
 // backend/routes/auth.js). login() does a full-page redirect into the
@@ -44,8 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const login = useCallback(() => {
+    // Preview mode has no Spotify to redirect to - just re-check (always logged in).
+    if (PREVIEW_MODE) return refresh();
     window.location.href = spotifyLoginUrl();
-  }, []);
+  }, [refresh]);
 
   const logout = useCallback(() => {
     apiLogout().finally(() => {
