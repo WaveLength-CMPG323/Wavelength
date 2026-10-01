@@ -36,10 +36,6 @@ router.get('/inventory', async (req, res) => {
 router.post('/equip', async (req, res) => {
   const { rewardId, isEquipped } = req.body;
 
-  if (!rewardId) {
-    return res.status(400).json({ error: 'rewardId is required' });
-  }
-
   try {
     const accessToken = await getValidAccessToken(req.sessionID);
     const userProfileRes = await axios.get('https://api.spotify.com/v1/me', {
@@ -47,37 +43,31 @@ router.post('/equip', async (req, res) => {
     });
     const spotifyUserId = userProfileRes.data.id;
 
-    // Verify the user actually owns this reward
-    const ownershipCheck = await pool.query(
-      `SELECT 1 FROM user_cosmetics WHERE spotify_user_id = $1 AND reward_id = $2`,
-      [spotifyUserId, rewardId]
-    );
-
-    if (ownershipCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'You have not unlocked this cosmetic reward yet' });
-    }
-
     if (isEquipped) {
+      // Unequip all other cosmetics for this user first
       await pool.query(
         `UPDATE user_cosmetics SET is_equipped = FALSE WHERE spotify_user_id = $1`,
         [spotifyUserId]
       );
+      // Then equip the target one
+      await pool.query(
+        `UPDATE user_cosmetics SET is_equipped = TRUE WHERE spotify_user_id = $1 AND reward_id = $2`,
+        [spotifyUserId, rewardId]
+      );
+    } else {
+      await pool.query(
+        `UPDATE user_cosmetics SET is_equipped = FALSE WHERE spotify_user_id = $1 AND reward_id = $2`,
+        [spotifyUserId, rewardId]
+      );
     }
 
-    // Update the target cosmetic's equipment state
-    await pool.query(
-      `UPDATE user_cosmetics SET is_equipped = $1 WHERE spotify_user_id = $2 AND reward_id = $3`,
-      [isEquipped, spotifyUserId, rewardId]
-    );
+    // Update oceanState so live sessions reflect the active effect immediately
+    const activeCss = isEquipped ? (await pool.query(`SELECT css_class FROM rewards WHERE reward_id = $1`, [rewardId])).rows[0]?.css_class : null;
+    oceanState.updateUserActiveEffect(spotifyUserId, activeCss);
 
-    // Broadcast change via Socket.io if io instance is attached to app
     const io = req.app.get('io');
     if (io) {
-      io.emit('user_cosmetic_changed', {
-        spotifyUserId,
-        rewardId,
-        isEquipped
-      });
+      io.emit('user_cosmetic_changed', { spotifyUserId, rewardId, isEquipped, cssClass: activeCss });
     }
 
     res.json({ success: true, rewardId, isEquipped });
@@ -86,5 +76,6 @@ router.post('/equip', async (req, res) => {
     res.status(500).json({ error: 'Could not update equipment state' });
   }
 });
+
 
 module.exports = router;

@@ -26,11 +26,11 @@ CREATE TABLE challenge_submissions (
 
 -- 1. List of available cosmetic rewards
 CREATE TABLE rewards (
-  reward_id TEXT PRIMARY KEY,
+  reward_id TEXT PRIMARY KEY, -- e.g 'cyan-border', 'gold-border'
   name TEXT NOT NULL,
   description TEXT NOT NULL,
-  effect_type TEXT NOT NULL, -- e.g., 'profile_aura', 'song_marker', or 'both'
-  css_class TEXT NOT NULL   -- e.g., 'cyan-glow', 'gold-shimmer'
+  effect_type TEXT NOT NULL, -- e.g 'profile_aura', 'song_marker', or 'both'
+  css_class TEXT NOT NULL   -- e.g 'cyan-glow', 'gold-shimmer'
 );
 
 -- 2. Track which users have unlocked and equipped which cosmetics
@@ -62,3 +62,10 @@ VALUES (
   '2026-09-30 23:59:59+00', 
   FALSE
 );
+
+-- Insert cosmetic rewards
+INSERT INTO rewards (reward_id, name, description, effect_type, css_class)
+VALUES 
+  ('cyan-border', 'Abyssal Crest', 'Bioluminescent cyan glow applied to your avatar aura and your floating ocean song marker.', 'both', 'cyan-glow'),
+  ('gold-border', 'Golden Tide', 'Radiant golden shimmer applied to your avatar aura and your floating ocean song marker.', 'both', 'gold-shimmer')
+ON CONFLICT (reward_id) DO NOTHING;

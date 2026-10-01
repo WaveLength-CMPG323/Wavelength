@@ -16,6 +16,8 @@ const { startOceanPoller } = require('./lib/spotifyPoller');
 const app = express();
 app.set('trust proxy', 1); // needed behind Render's (or any) reverse proxy for req.ip/req.protocol to reflect the real client, not the proxy hop
 const httpServer = http.createServer(app);
+const { router: rewardsRouter } = require('./routes/rewards');
+app.use('/rewards', rewardsRouter);
 
 // The React frontend (Vite dev server, or wherever it's deployed) runs on
 // a different origin than this API, so both plain requests AND the

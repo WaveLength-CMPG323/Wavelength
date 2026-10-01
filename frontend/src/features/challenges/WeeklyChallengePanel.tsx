@@ -29,9 +29,10 @@ interface ChallengeTrack {
 interface WeeklyChallengePanelProps {
   open: boolean;
   onClose: () => void;
+  onOpenRewards?: () => void;
 }
 
-export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengePanelProps) {
+export default function WeeklyChallengePanel({ open, onClose, onOpenRewards }: WeeklyChallengePanelProps) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [remaining, setRemaining] = useState<number>(0);
   const [query, setQuery] = useState<string>('');
@@ -164,8 +165,21 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
           <p className="mt-2 text-xs leading-relaxed text-slate-300">
             {challenge.description}
           </p>
-          <div className="mt-3 flex items-center justify-end border-t border-cyan-500/10 pt-3 text-xs">
-            {alreadyEntered && <span className="font-semibold text-cyan-300">You're in ✓</span>}
+          <div className="mt-3 flex items-center justify-between border-t border-cyan-500/10 pt-3 text-xs">
+            {alreadyEntered ? (
+              <span className="font-semibold text-cyan-300">You're in ✓</span>
+            ) : (
+              <span className="text-slate-400">No submission yet</span>
+            )}
+            {onOpenRewards && (
+              <button
+                onClick={onOpenRewards}
+                type="button"
+                className="font-medium text-cyan-300 underline hover:text-cyan-200"
+              >
+                View Rewards & Cosmetics →
+              </button>
+            )}
           </div>
         </div>
 
@@ -232,7 +246,18 @@ export default function WeeklyChallengePanel({ open, onClose }: WeeklyChallengeP
           </button>
         )}
         {alreadyEntered && (
-          <div className="text-center text-sm font-medium text-cyan-300">Entered — good luck!</div>
+          <div className="flex flex-col gap-2">
+            <div className="text-center text-sm font-medium text-cyan-300">Entered — good luck!</div>
+            {onOpenRewards && (
+              <button
+                onClick={onOpenRewards}
+                type="button"
+                className="w-full rounded-full border border-cyan-500/30 bg-cyan-500/10 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-500/20"
+              >
+                Check Unlocked Cosmetics
+              </button>
+            )}
+          </div>
         )}
         <div className="text-center text-xs text-slate-500">Limited to one entry per week.</div>
       </div>
