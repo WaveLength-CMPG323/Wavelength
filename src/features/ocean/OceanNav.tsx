@@ -5,15 +5,18 @@ import {
   Bell,
   LogIn,
   LogOut,
+  Menu,
   MessageCircle,
   Search,
   Trophy,
+  X,
 } from 'lucide-react';
 
 import { useData } from '../../data/DataContext';
 import { useAuth } from '../../data/AuthContext';
 import { useWaveTransition } from '../../components/WaveTransitionProvider';
 import OceanButton from '../../components/OceanButton';
+import WaterLogo from '../../components/WaterLogo';
 
 interface Props {
   onSearch: (query: string) => void;
@@ -34,15 +37,11 @@ export default function OceanNav({
   const [isDiving, setIsDiving] = useState(false);
   const [isResurfacing, setIsResurfacing] = useState(false);
   const [splashKey, setSplashKey] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { waveNavigate } = useWaveTransition();
 
   const prevChallengeOpen = useRef(isChallengeOpen);
 
-  const pendingCount = db.notifications.filter(
-    (notification) => notification.status === 'pending'
-  ).length;
-
-  // Detect when the Challenge Panel closes to trigger the "Resurfacing" animation from the ocean
   useEffect(() => {
     if (prevChallengeOpen.current && !isChallengeOpen) {
       setIsResurfacing(true);
@@ -83,7 +82,7 @@ export default function OceanNav({
     <header className="absolute inset-x-0 top-0 z-30 px-5 pt-4">
       <div
         className="
-          mx-auto flex min-h-16 w-full
+          relative mx-auto flex min-h-16 w-full
           flex-wrap items-center gap-x-4 gap-y-2
           rounded-2xl border border-cyan-400/20
           bg-[#071330]/40 px-5 py-3
@@ -92,39 +91,17 @@ export default function OceanNav({
           backdrop-blur-xl
         "
       >
-        {/* LEFT — WaveLength branding */}
+        {/* LEFT — WaveLength Animated Water Logo */}
         <Link
           to="/"
           aria-label="WaveLength home"
-          className="flex shrink-0 items-center gap-3"
+          className="flex shrink-0 items-center"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-400/10 border border-cyan-300/30 shadow-[0_0_12px_rgba(34,211,238,0.2)]">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M2 14c2-3 4-3 6 0s4 3 6 0 4-3 6 0"
-                stroke="#38bdf8"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-
-          <div className="block">
-            <p className="text-base font-semibold tracking-wide text-white">
-              WaveLength
-            </p>
-            <p className="text-[11px] text-cyan-200/60">Discover your sound</p>
-          </div>
+          <WaterLogo />
         </Link>
 
-        {/* LEFT — Navigation with Diving & Resurfacing Ocean Buoy */}
-        <div className="flex items-center">
+        {/* LEFT — Navigation with Diving & Resurfacing Ocean Buoy (Desktop) */}
+        <div className="hidden md:flex items-center">
           {isLoggedIn && (
             <nav className="flex items-center justify-center gap-2">
               <OceanButton
@@ -139,10 +116,6 @@ export default function OceanNav({
               >
                 <MessageCircle className="h-4 w-4 shrink-0" />
                 <span className="hidden xl:inline">Chat</span>
-
-                {db.hasChatDot && (
-                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-cyan-400 ring-2 ring-[#071330]" />
-                )}
               </OceanButton>
 
               <button
@@ -159,9 +132,6 @@ export default function OceanNav({
               >
                 <Bell className="h-4 w-4 shrink-0" />
                 <span className="hidden xl:inline">Notifications</span>
-                {pendingCount > 0 && (
-                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-cyan-400 ring-2 ring-[#071330]" />
-                )}
               </button>
 
               {/* OCEAN BUOY BUTTON CONTAINER */}
@@ -170,7 +140,6 @@ export default function OceanNav({
                 onMouseEnter={() => handleFlip(true)}
                 onMouseLeave={() => handleFlip(false)}
               >
-                {/* EXPLOSIVE SPLASH PARTICLES */}
                 <AnimatePresence>
                   <div
                     key={splashKey}
@@ -197,7 +166,6 @@ export default function OceanNav({
                   </div>
                 </AnimatePresence>
 
-                {/* ANIMATION ENGINE: DIVING DOWN ON CLICK & RESURFACING FROM OCEAN ON CLOSE */}
                 <motion.div
                   animate={
                     isDiving
@@ -266,6 +234,7 @@ export default function OceanNav({
                           </span>
                         </div>
 
+                        {/* Pulsing cyan dot on Weekly Challenge */}
                         <span className="relative z-10 flex h-2 w-2">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75" />
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
@@ -343,7 +312,7 @@ export default function OceanNav({
                 type="button"
                 aria-label="Log out"
                 className="
-                  flex shrink-0 items-center gap-2
+                  hidden md:flex shrink-0 items-center gap-2
                   rounded-full px-2 py-2
                   text-sm font-medium text-cyan-100/70
                   transition hover:bg-cyan-500/10 hover:text-white
@@ -363,7 +332,154 @@ export default function OceanNav({
               <span className="hidden sm:inline">Log in</span>
             </Link>
           )}
+
+          {/* MOBILE HAMBURGER BUTTON */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="block md:hidden p-2 text-cyan-200 hover:text-white focus:outline-none"
+            aria-label="Toggle navigation menu"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
+
+        {/* MOBILE DROPDOWN MENU */}
+        {mobileMenuOpen && (
+          <div className="mt-3 w-full rounded-xl border border-cyan-400/20 bg-[#071330]/95 p-4 md:hidden backdrop-blur-xl">
+            <div className="flex flex-col items-stretch gap-3">
+              {isLoggedIn && (
+                <>
+                  {/* OCEAN BUOY BUTTON FOR MOBILE */}
+                  <div
+                    className="relative flex justify-center py-1 [perspective:1000px]"
+                    onClick={() => {
+                      handleClickChallenge();
+                      setMobileMenuOpen(false);
+                    }}
+                    onMouseEnter={() => handleFlip(true)}
+                    onMouseLeave={() => handleFlip(false)}
+                  >
+                    <button
+                      type="button"
+                      aria-label="Weekly Challenge"
+                      className="
+                        relative h-10 w-full max-w-xs overflow-hidden rounded-full p-[1px]
+                        shadow-[0_4px_20px_rgba(6,182,212,0.35)]
+                      "
+                    >
+                      <motion.div
+                        className="relative h-full w-full [transform-style:preserve-3d]"
+                        animate={{ rotateY: isFlipped ? 180 : 0 }}
+                        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+                      >
+                        <div
+                          className="
+                            absolute inset-0 flex h-full w-full items-center justify-between
+                            rounded-full bg-gradient-to-r from-cyan-900/95 via-blue-900/95 to-slate-950/95
+                            px-4 border border-cyan-400/30 backdrop-blur-md
+                            [backface-visibility:hidden]
+                          "
+                        >
+                          <div className="relative z-10 flex items-center gap-2">
+                            <motion.div
+                              animate={{ rotate: [-6, 6, -6] }}
+                              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+                              className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-400/20 border border-cyan-300/40"
+                            >
+                              <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-cyan-200" strokeWidth="2.5">
+                                <path d="M2 14c3-4 6-4 9 0s6 4 9 0" />
+                              </svg>
+                            </motion.div>
+                            <span className="font-bold text-xs tracking-wider text-cyan-100">
+                              RIDE THE WAVE
+                            </span>
+                          </div>
+
+                          <span className="relative z-10 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
+                          </span>
+                        </div>
+
+                        <div
+                          className="
+                            absolute inset-0 flex h-full w-full items-center justify-center gap-2
+                            rounded-full bg-gradient-to-r from-sky-950 via-teal-900 to-cyan-950
+                            px-3 border border-teal-300/50 backdrop-blur-md
+                            [backface-visibility:hidden] [transform:rotateY(180deg)]
+                          "
+                        >
+                          <Trophy className="h-4 w-4 text-cyan-300 drop-shadow-[0_0_6px_#22d3ee]" />
+                          <span className="font-extrabold text-[11px] tracking-wide text-cyan-100">
+                            WEEKLY CHALLENGES
+                          </span>
+                          <div className="rounded-full bg-cyan-400/20 border border-cyan-300/40 px-1.5 py-0.5 text-[8px] font-black text-cyan-200 tracking-wider">
+                            GO
+                          </div>
+                        </div>
+                      </motion.div>
+                    </button>
+                  </div>
+
+                  {/* CHAT BUTTON */}
+                  <OceanButton
+                    onClick={() => {
+                      waveNavigate('/chat');
+                      setMobileMenuOpen(false);
+                    }}
+                    aria-label="Chat"
+                    className="
+                      relative flex items-center justify-center gap-2
+                      rounded-full border border-cyan-400/20 bg-cyan-950/40 px-4 py-2.5
+                      text-sm font-medium text-cyan-100
+                      hover:bg-cyan-500/20 hover:text-white
+                    "
+                  >
+                    <MessageCircle className="h-4 w-4 shrink-0" />
+                    <span>Chat</span>
+                  </OceanButton>
+
+                  {/* NOTIFICATIONS BUTTON */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenNotifications();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="
+                      relative flex items-center justify-center gap-2
+                      rounded-full border border-cyan-400/20 bg-cyan-950/40 px-4 py-2.5
+                      text-sm font-medium text-cyan-100
+                      hover:bg-cyan-500/20 hover:text-white
+                    "
+                  >
+                    <Bell className="h-4 w-4 shrink-0" />
+                    <span>Notifications</span>
+                  </button>
+
+                  {/* LOG OUT BUTTON */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="
+                      flex items-center justify-center gap-2
+                      rounded-full border border-red-500/20 bg-red-950/20 px-4 py-2.5
+                      text-sm font-medium text-red-300
+                      hover:bg-red-500/20
+                    "
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Log out</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
