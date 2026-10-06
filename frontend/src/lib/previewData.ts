@@ -3,10 +3,16 @@
 // difference. Never imported in production builds (guarded by PREVIEW_MODE).
 import type { Socket } from "socket.io-client";
 import type {
+  ChallengeCompletion,
+  ChallengeReward,
   ChatRequest,
+  Cosmetic,
+  CurrentChallenge,
+  EligibleTrack,
   HostProfile,
   OceanGroup,
   RecentTrack,
+  RewardsResponse,
   SpotifyProfile,
 } from "../data/types";
 
@@ -193,6 +199,138 @@ const json = (body: unknown, status = 200) =>
     headers: { "Content-Type": "application/json" },
   });
 
+/* ---------------- fake weekly challenges ---------------- */
+// Mirrors backend/routes/challenges.js. State lives in memory, so a page
+// reload resets it (same as the rest of preview mode). Handy states to try:
+// complete the challenge, equip a past reward, switch it off again.
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+
+const PREVIEW_COSMETICS: Record<string, Cosmetic> = {
+  "tide-ring": { id: "tide-ring", name: "Tide Ring", description: "A clean ring of rolling tide.", kind: "frame", color: "#22d3ee", accent: "#0ea5e9" },
+  "coral-glow": { id: "coral-glow", name: "Coral Glow", description: "A warm pulse, straight off the reef.", kind: "glow", color: "#fb7185", accent: "#f97316" },
+  "moonlit-ripple": { id: "moonlit-ripple", name: "Moonlit Ripple", description: "Moonlight spreading across still water.", kind: "ripple", color: "#c4b5fd", accent: "#818cf8" },
+};
+
+// Monday 00:00 UTC of the current week, like the real getWeek().
+function previewWeek() {
+  const d = new Date();
+  const daysSinceMonday = (d.getUTCDay() + 6) % 7;
+  const startsAt = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - daysSinceMonday);
+  return { startsAt, endsAt: startsAt + WEEK_MS, weekKey: new Date(startsAt).toISOString().slice(0, 10) };
+}
+
+const PREVIEW_CHALLENGE = {
+  id: "hidden-gem",
+  theme: "Hidden Gem",
+  description: "Share an underrated artist you think deserves more ears.",
+  cosmetic: PREVIEW_COSMETICS["moonlit-ripple"],
+};
+
+function previewTrack(i: number) {
+  const t = SEED[i];
+  return { id: t.id, name: t.name, artist: t.artist, albumArt: t.cover };
+}
+
+// Two past weeks already earned, so the rewards panel has something in it.
+const previewRewards: ChallengeReward[] = [
+  {
+    cosmetic: PREVIEW_COSMETICS["coral-glow"],
+    earnedAt: Date.now() - 1000 * 60 * 60 * 24 * 9,
+    weekKey: new Date(previewWeek().startsAt - WEEK_MS).toISOString().slice(0, 10),
+    theme: "Lost in Translation",
+    track: previewTrack(1),
+    timesEarned: 1,
+  },
+  {
+    cosmetic: PREVIEW_COSMETICS["tide-ring"],
+    earnedAt: Date.now() - 1000 * 60 * 60 * 24 * 16,
+    weekKey: new Date(previewWeek().startsAt - 2 * WEEK_MS).toISOString().slice(0, 10),
+    theme: "Childhood Soundtrack",
+    track: previewTrack(2),
+    timesEarned: 1,
+  },
+];
+let previewCompletion: ChallengeCompletion | null = null;
+let previewActiveCosmeticId: string | null = null;
+
+const activePreviewCosmetic = (): Cosmetic | null =>
+  (previewActiveCosmeticId && PREVIEW_COSMETICS[previewActiveCosmeticId]) || null;
+
+const previewEligibleTracks = (): EligibleTrack[] =>
+  SEED.slice(0, 5).map((t, i) => ({
+    trackId: t.id,
+    name: t.name,
+    artist: t.artist,
+    albumArt: t.cover,
+    playedAt: i === 0 ? null : new Date(Date.now() - i * HOUR_MS * 5).toISOString(),
+    nowPlaying: i === 0,
+  }));
+
+function previewChallengeFetch(p: string, method: string, body: Record<string, unknown>): Response | null {
+  if (p === "/challenges/current") {
+    const week = previewWeek();
+    const result: CurrentChallenge = {
+      challenge: { ...PREVIEW_CHALLENGE, weekKey: week.weekKey, startsAt: week.startsAt, endsAt: week.endsAt },
+      serverNow: Date.now(),
+      participantCount: 37 + (previewCompletion ? 1 : 0),
+      me: {
+        completed: !!previewCompletion,
+        completion: previewCompletion,
+        ownsCosmetic: previewRewards.some((r) => r.cosmetic.id === PREVIEW_CHALLENGE.cosmetic.id),
+      },
+    };
+    return json(result);
+  }
+
+  if (p === "/challenges/current/eligible-tracks") return json({ tracks: previewEligibleTracks() });
+
+  if (p === "/challenges/current/complete" && method === "POST") {
+    if (previewCompletion) {
+      return json({ error: "You’ve already completed this week’s challenge", completion: previewCompletion }, 409);
+    }
+    const track = previewEligibleTracks().find((t) => t.trackId === body.trackId);
+    if (!track) {
+      return json({ error: "We couldn’t find that song in your listening this week. Play it on Spotify, then try again." }, 400);
+    }
+    const week = previewWeek();
+    previewCompletion = {
+      weekKey: week.weekKey,
+      challengeId: PREVIEW_CHALLENGE.id,
+      theme: PREVIEW_CHALLENGE.theme,
+      completedAt: Date.now(),
+      track: { id: track.trackId, name: track.name, artist: track.artist, albumArt: track.albumArt },
+    };
+    previewRewards.unshift({
+      cosmetic: PREVIEW_CHALLENGE.cosmetic,
+      earnedAt: previewCompletion.completedAt,
+      weekKey: week.weekKey,
+      theme: PREVIEW_CHALLENGE.theme,
+      track: previewCompletion.track,
+      timesEarned: 1,
+    });
+    return json({ completed: true, completion: previewCompletion, cosmetic: PREVIEW_CHALLENGE.cosmetic, alreadyOwned: false });
+  }
+
+  if (p === "/challenges/rewards") {
+    const result: RewardsResponse = { rewards: previewRewards, activeCosmeticId: previewActiveCosmeticId };
+    return json(result);
+  }
+
+  if (p === "/challenges/active-cosmetic" && method === "PUT") {
+    const id = body.cosmeticId;
+    if (id !== null && typeof id !== "string") return json({ error: "cosmeticId must be a string or null" }, 400);
+    if (id !== null && !previewRewards.some((r) => r.cosmetic.id === id)) {
+      return json({ error: "You haven’t unlocked that reward yet" }, 403);
+    }
+    previewActiveCosmeticId = id;
+    return json({ activeCosmetic: activePreviewCosmetic() });
+  }
+
+  return null;
+}
+
 export async function previewFetch(
   path: string,
   options: RequestInit = {},
@@ -202,8 +340,16 @@ export async function previewFetch(
   const p = path.split("?")[0];
 
   if (p === "/auth/me")
-    return json({ loggedIn: true, profile: PREVIEW_PROFILE });
+    return json({
+      loggedIn: true,
+      profile: { ...PREVIEW_PROFILE, activeCosmetic: activePreviewCosmetic() },
+    });
   if (p === "/auth/logout") return json({ success: true });
+
+  if (p.startsWith("/challenges/")) {
+    const res = previewChallengeFetch(p, method, body);
+    if (res) return res;
+  }
 
   if (p === "/spotify/currently-playing") {
     const mine = SEED[0];

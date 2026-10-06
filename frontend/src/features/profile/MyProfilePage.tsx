@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, ListMusic } from 'lucide-react';
+import { ExternalLink, ListMusic, Sparkles } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
+import CosmeticAvatar from '../../components/CosmeticAvatar';
+import ChallengeRewardsPanel from '../challenges/ChallengeRewardsPanel';
 import { useData } from '../../data/DataContext';
 import { useAuth } from '../../data/AuthContext';
 import { fetchRecentlyPlayed, fetchPublicPlaylists } from '../../lib/api';
@@ -26,6 +28,7 @@ export default function MyProfilePage() {
   const [bio, setBio] = useState(me.bio);
   const [genreInput, setGenreInput] = useState('');
   const [toast, setToast] = useState(false);
+  const [rewardsOpen, setRewardsOpen] = useState(false);
 
   const [recentTracks, setRecentTracks] = useState<RecentTrack[]>([]);
   const [recentError, setRecentError] = useState('');
@@ -76,15 +79,21 @@ export default function MyProfilePage() {
       <div className="mx-auto my-8 max-w-4xl rounded-3xl border border-cyan-500/20 bg-[#04385a]/90 p-6 shadow-2xl backdrop-blur-md md:p-8">
         {/* Header: real Spotify avatar + name + editable fields */}
         <div className="flex flex-col items-center gap-6 border-b border-cyan-500/20 pb-6 sm:flex-row sm:items-start">
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-cyan-400 bg-slate-300 shadow-md">
-            {profile?.profileImage ? (
-              <img src={profile.profileImage} alt="Your Spotify profile" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-3xl font-semibold text-slate-700">
-                {(profile?.displayName || '?').charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
+          <CosmeticAvatar cosmetic={profile?.activeCosmetic} size={112}>
+            <div
+              className={`flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-slate-300 shadow-md ${
+                profile?.activeCosmetic ? '' : 'border-2 border-cyan-400'
+              }`}
+            >
+              {profile?.profileImage ? (
+                <img src={profile.profileImage} alt="Your Spotify profile" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-3xl font-semibold text-slate-700">
+                  {(profile?.displayName || '?').charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+          </CosmeticAvatar>
 
           <div className="flex-1 space-y-4">
             {profile?.displayName && (
@@ -126,6 +135,26 @@ export default function MyProfilePage() {
             <p className="text-xl font-bold text-cyan-100">{me.genres.length}</p>
             <p className="text-xs uppercase tracking-wider text-cyan-300">Genres</p>
           </div>
+        </div>
+
+        {/* Weekly-challenge rewards: the collection + equip/unequip lives in the panel */}
+        <div className="flex items-center justify-between gap-3 border-b border-cyan-500/20 py-6">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-cyan-300">Challenge rewards</h3>
+            <p className="mt-1 text-xs text-slate-400">
+              {profile?.activeCosmetic
+                ? `Wearing: ${profile.activeCosmetic.name}`
+                : 'Complete weekly challenges to collect profile cosmetics.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRewardsOpen(true)}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/20"
+          >
+            <Sparkles className="h-4 w-4" />
+            View rewards
+          </button>
         </div>
 
         {/* Genre pills */}
@@ -255,6 +284,8 @@ export default function MyProfilePage() {
       >
         Profile saved
       </div>
+
+      <ChallengeRewardsPanel open={rewardsOpen} onClose={() => setRewardsOpen(false)} />
     </div>
   );
 }

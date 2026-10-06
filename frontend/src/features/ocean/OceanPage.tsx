@@ -13,7 +13,7 @@ import { fetchCurrentlyPlaying } from '../../lib/api';
 import type { OceanGroup } from '../../data/types';
 
 export default function OceanPage() {
-  const { isLoggedIn, loading } = useAuth();
+  const { isLoggedIn, loading, profile } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [query, setQuery] = useState('');
@@ -95,8 +95,10 @@ export default function OceanPage() {
         song: { id: g.trackId, title: g.trackName, artist: g.artist, cover: g.albumArt, ownerId: g.hostSessionId },
         isMine: g.trackId === myTrackId,
         listenerCount: g.listenerCount,
+        // Your own bubble wears your weekly-challenge cosmetic.
+        cosmetic: g.trackId === myTrackId ? (profile?.activeCosmetic ?? null) : null,
       }));
-  }, [groups, query, myTrackId]);
+  }, [groups, query, myTrackId, profile?.activeCosmetic]);
 
   const { canvasRef, containerRef, hoveredId } = useOceanCanvas({
     markers,

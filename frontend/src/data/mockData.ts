@@ -4,7 +4,7 @@
 // DataContext), never touch localStorage directly, so that swap stays
 // contained to this one file.
 
-import type { AppState, CatalogEntry } from './types';
+import type { AppState } from './types';
 
 // Bump this whenever seed() changes in a way that should override data
 // already saved in someone's browser (like clearing the example chats/
@@ -13,33 +13,6 @@ import type { AppState, CatalogEntry } from './types';
 // already cached the old shape under the old key. The old key's data is
 // just left orphaned in localStorage, harmless.
 const KEY = 'wavelength_db_v3';
-
-const CHALLENGE_THEMES = [
-  'NOSTALGIA', '80S', 'RAINY DAY', 'MIDNIGHT DRIVE', 'FIRST LOVE', 'SUMMER HEAT', 'HOMECOMING',
-];
-
-// Stand-in for a real Spotify catalog search until the backend Web API
-// integration exists.
-const SPOTIFY_CATALOG: CatalogEntry[] = [
-  { title: 'Take On Me', artist: 'a-ha' },
-  { title: 'Yesterday Once More', artist: 'The Carpenters' },
-  { title: 'Blinding Lights', artist: 'The Weeknd' },
-  { title: 'Nights', artist: 'Frank Ocean' },
-  { title: 'Landslide', artist: 'Fleetwood Mac' },
-  { title: 'Electric Feel', artist: 'MGMT' },
-  { title: 'Sunflower', artist: 'Rex Orange County' },
-  { title: 'Redbone', artist: 'Childish Gambino' },
-  { title: 'Dreams', artist: 'Fleetwood Mac' },
-  { title: 'Midnight City', artist: 'M83' },
-  { title: 'Circles', artist: 'Post Malone' },
-  { title: 'Ribs', artist: 'Lorde' },
-  { title: 'Home', artist: 'Edward Sharpe & The Magnetic Zeros' },
-  { title: 'Two Slow Dancers', artist: 'Mitski' },
-  { title: 'Blue', artist: 'Yung Kai' },
-  { title: 'Missing You', artist: 'John Waite' },
-  { title: 'Sweater Weather', artist: 'The Neighbourhood' },
-  { title: 'Golden', artist: 'Harry Styles' },
-];
 
 function seed(): AppState {
   return {
@@ -74,11 +47,6 @@ function seed(): AppState {
     notifications: [],
     hasNotifDot: false,
     hasChatDot: false,
-    challenge: {
-      theme: 'NOSTALGIA',
-      deadline: Date.now() + 7 * 24 * 60 * 60 * 1000,
-      mySubmission: null,
-    },
   };
 }
 
@@ -95,30 +63,11 @@ export function randomCover(seed: string): string {
   return PLACEHOLDER_COVERS[Math.abs(hash) % PLACEHOLDER_COVERS.length];
 }
 
-export function searchSpotifyCatalog(query: string): CatalogEntry[] {
-  const q = query.trim().toLowerCase();
-  if (q === '') return [];
-  return SPOTIFY_CATALOG.filter(
-    (s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
-  ).slice(0, 6);
-}
-
 export function hashColor(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
   const hue = Math.abs(hash) % 360;
   return `hsl(${hue}, 55%, 45%)`;
-}
-
-// If the current weekly challenge's 7-day window has closed, roll over to a
-// fresh theme + deadline and clear the submission flag ("once per week").
-export function rolloverChallengeIfNeeded(db: AppState): AppState {
-  if (Date.now() >= db.challenge.deadline) {
-    const nextTheme = CHALLENGE_THEMES[Math.floor(Math.random() * CHALLENGE_THEMES.length)];
-    db.challenge = { theme: nextTheme, deadline: Date.now() + 7 * 24 * 60 * 60 * 1000, mySubmission: null };
-    save(db);
-  }
-  return db;
 }
 
 export function load(): AppState {

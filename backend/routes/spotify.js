@@ -14,6 +14,7 @@ const {
 const { getValidAccessToken } = require('../lib/authHelper');
 const { getTokensBySpotifyUserId } = require('../db/tokenStore');
 const oceanState = require('../lib/oceanState');
+const { getActiveCosmeticFor } = require('../lib/cosmetics');
 
 // GET /spotify/currently-playing
 // Used by the standalone test dashboard (routes/spotify.js is separate
@@ -217,6 +218,7 @@ router.get('/user/:spotifyUserId', async (req, res) => {
       displayName: stored.displayName,
       profileUrl: stored.profileUrl,
       profileImage: stored.profileImage,
+      activeCosmetic: await getActiveCosmeticFor(stored.spotifyUserId),
     },
   });
 });

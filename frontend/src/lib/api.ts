@@ -4,7 +4,19 @@
 // backend knows which Spotify account/session is asking. See socket.ts for
 // the companion Socket.IO connection used for live 'oceanUpdate' events.
 import { PREVIEW_MODE } from './devPreview';
-import type { ChatRequest, HostProfile, MyPlayback, PublicPlaylist, RecentTrack, SpotifyProfile } from '../data/types';
+import type {
+  ChatRequest,
+  CompleteChallengeResult,
+  Cosmetic,
+  CurrentChallenge,
+  EligibleTrack,
+  HostProfile,
+  MyPlayback,
+  PublicPlaylist,
+  RecentTrack,
+  RewardsResponse,
+  SpotifyProfile,
+} from '../data/types';
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -159,4 +171,50 @@ export async function skipNext(): Promise<void> {
 export async function skipPrevious(): Promise<void> {
   const res = await apiFetch('/spotify/previous', { method: 'POST' });
   if (!res.ok) throw new Error(await errorFrom(res, 'Could not skip to previous track'));
+}
+
+/* ---------- Weekly challenges (backend/routes/challenges.js) ---------- */
+
+// This week's challenge and where I stand. The server picks the challenge
+// from the calendar, so a new one simply appears each Monday.
+export async function fetchCurrentChallenge(): Promise<CurrentChallenge> {
+  const res = await apiFetch('/challenges/current');
+  if (!res.ok) throw new Error(await errorFrom(res, "Could not load this week's challenge"));
+  return res.json();
+}
+
+// The songs I can submit: whatever I'm playing now plus what I've played
+// this week. The server re-checks against this same list on submit.
+export async function fetchEligibleTracks(): Promise<EligibleTrack[]> {
+  const res = await apiFetch('/challenges/current/eligible-tracks');
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load your listening history'));
+  const body = await res.json();
+  return body.tracks;
+}
+
+export async function completeChallenge(trackId: string): Promise<CompleteChallengeResult> {
+  const res = await apiFetch('/challenges/current/complete', {
+    method: 'POST',
+    body: JSON.stringify({ trackId }),
+  });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not complete the challenge'));
+  return res.json();
+}
+
+// Every cosmetic I've collected, plus which one is switched on.
+export async function fetchRewards(): Promise<RewardsResponse> {
+  const res = await apiFetch('/challenges/rewards');
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not load your rewards'));
+  return res.json();
+}
+
+// Switch one of my cosmetics on (replacing whichever was on), or off with null.
+export async function setActiveCosmetic(cosmeticId: string | null): Promise<Cosmetic | null> {
+  const res = await apiFetch('/challenges/active-cosmetic', {
+    method: 'PUT',
+    body: JSON.stringify({ cosmeticId }),
+  });
+  if (!res.ok) throw new Error(await errorFrom(res, 'Could not update your cosmetic'));
+  const body = await res.json();
+  return body.activeCosmetic;
 }

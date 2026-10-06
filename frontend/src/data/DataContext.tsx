@@ -18,7 +18,7 @@ interface DataContextValue {
 const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [db, setDb] = useState<AppState>(() => api.rolloverChallengeIfNeeded(api.load()));
+  const [db, setDb] = useState<AppState>(() => api.load());
 
   // Stand-in for the Socket.IO context described in the spec: in the real
   // app this effect would instead subscribe to socket events. Here it just

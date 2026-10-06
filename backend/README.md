@@ -166,3 +166,73 @@ own `SESSION_SECRET`. Point them at this README for the full setup.
    `FRONTEND_URL` pointing at your deployed URLs instead of localhost.
 3. Set `DATABASE_URL` to your hosted Postgres connection string.
 4. No code changes needed — it's purely an environment-variable swap.
+
+## Weekly challenges & cosmetic rewards
+
+A new challenge goes live every week, and completing it permanently unlocks
+that week's profile cosmetic. Users collect them and choose which one to wear.
+
+**How it works**
+
+- **No scheduler.** The live challenge is calculated from the calendar
+  (`lib/challenges.js` → `getWeek()`): each Monday 00:00 UTC the next entry in
+  `CHALLENGES` takes over, cycling forever. Set `CHALLENGE_TZ_OFFSET_HOURS`
+  (e.g. `2` for South Africa) to roll over at local midnight instead.
+- **Verification.** A user can only submit a song they've really played this
+  week (now playing + Spotify recently-played). The server re-checks this on
+  submit, so it can't be faked from the browser. Uses scopes you already
+  request (`user-read-recently-played`).
+- **One completion per user per week**, enforced by the database primary key
+  (safe against double-clicks / parallel requests).
+- **Rewards are permanent** and keyed to the Spotify account id, so they
+  survive logout, new browsers and new devices.
+- **One cosmetic worn at a time.** Equipping another swaps it; toggling off
+  clears it. Only earned cosmetics can be equipped.
+
+**Endpoints** (all under `/challenges`)
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/current` | This week's challenge, time left, my status (works logged out) |
+| GET | `/current/eligible-tracks` | Songs I can submit (heard this week) |
+| POST | `/current/complete` `{ trackId }` | Complete the challenge, unlock the cosmetic |
+| GET | `/rewards` | All cosmetics I've collected + which is equipped |
+| PUT | `/active-cosmetic` `{ cosmeticId \| null }` | Equip / unequip |
+
+`/auth/me` and `/spotify/user/:id` now also return `activeCosmetic`, which is
+how the home screen and profile pages know what to draw.
+
+**Database.** Needs Postgres (`DATABASE_URL`) for rewards to be truly
+permanent - with the in-memory fallback they reset when the server restarts.
+The tables are created automatically on startup; for reference:
+
+```sql
+CREATE TABLE IF NOT EXISTS challenge_completions (
+  spotify_user_id TEXT NOT NULL,
+  week_key        TEXT NOT NULL,
+  challenge_id    TEXT NOT NULL,
+  theme           TEXT NOT NULL,
+  cosmetic_id     TEXT NOT NULL,
+  track_id        TEXT NOT NULL,
+  track_name      TEXT,
+  artist          TEXT,
+  album_art       TEXT,
+  completed_at    BIGINT NOT NULL,
+  PRIMARY KEY (spotify_user_id, week_key)
+);
+CREATE TABLE IF NOT EXISTS profile_cosmetics (
+  spotify_user_id    TEXT PRIMARY KEY,
+  active_cosmetic_id TEXT
+);
+```
+
+**Adding content.** Append to `COSMETICS` / `CHALLENGES` in `lib/challenges.js`
+(a cosmetic is just an id, a name, a `kind` of `frame` / `glow` / `ripple`, and
+two colours). Append only - reordering or inserting in the middle changes which
+challenge runs in which week. With 12 entries the cycle repeats every 12 weeks;
+a repeat still counts as completing the week but doesn't create a duplicate
+reward.
+
+**Tests.** `npm test` runs `tests/challenges.test.js` (rotation, verification,
+once-per-week, rewards, equipping, persistence across sessions). It stubs
+Spotify and Express, so it needs no credentials or database.

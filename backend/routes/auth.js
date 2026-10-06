@@ -4,6 +4,7 @@ const router = express.Router();
 
 const { exchangeCodeForTokens, getMyProfile } = require("../lib/spotifyClient");
 const { saveTokens, getTokens } = require("../db/tokenStore");
+const { getActiveCosmeticFor } = require("../lib/cosmetics");
 
 const { SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI, FRONTEND_URL } = process.env;
 
@@ -95,6 +96,10 @@ router.get("/me", async (req, res) => {
         profileUrl: stored.profileUrl,
         email: stored.email ?? null,
         profileImage: stored.profileImage ?? null,
+        // The weekly-challenge cosmetic they have switched on (or null) -
+        // included here so every screen that already knows "who am I"
+        // (the ocean nav, the profile page) gets it without another call.
+        activeCosmetic: await getActiveCosmeticFor(stored.spotifyUserId),
       },
     });
   } catch (err) {

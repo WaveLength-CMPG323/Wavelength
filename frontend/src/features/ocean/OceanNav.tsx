@@ -4,6 +4,7 @@ import { Search, Waves } from 'lucide-react';
 import { useData } from '../../data/DataContext';
 import { useAuth } from '../../data/AuthContext';
 import { fetchIncomingChatRequests } from '../../lib/api';
+import CosmeticAvatar from '../../components/CosmeticAvatar';
 
 interface Props {
   onSearch: (query: string) => void;
@@ -48,15 +49,23 @@ export default function OceanNav({ onSearch, onOpenNotifications, onOpenChalleng
         {isLoggedIn ? (
           <>
             <Link to="/profile" aria-label="Your profile" data-tour="profile" className="flex items-center">
-              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-700 ring-2 ring-transparent hover:ring-cyan-400">
-                {profile?.profileImage ? (
-                  <img src={profile.profileImage} alt="Your Spotify profile" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-xs font-semibold text-slate-300">
-                    {(profile?.displayName || '?').charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </span>
+              {/* Wears the weekly-challenge cosmetic (if one is switched on) -
+                  profile.activeCosmetic comes from /auth/me. */}
+              <CosmeticAvatar cosmetic={profile?.activeCosmetic} size={profile?.activeCosmetic ? 38 : 32}>
+                <span
+                  className={`flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-slate-700 ${
+                    profile?.activeCosmetic ? '' : 'ring-2 ring-transparent hover:ring-cyan-400'
+                  }`}
+                >
+                  {profile?.profileImage ? (
+                    <img src={profile.profileImage} alt="Your Spotify profile" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-semibold text-slate-300">
+                      {(profile?.displayName || '?').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </span>
+              </CosmeticAvatar>
             </Link>
             <Link to="/chat" data-tour="chat" className="relative text-sm font-medium hover:text-cyan-300">
               Chat

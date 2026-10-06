@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Song } from '../../data/types';
+import type { Cosmetic, Song } from '../../data/types';
 
 export interface OceanMarker {
   id: string; // song id
   song: Song;
   isMine: boolean;
   listenerCount: number;
+  cosmetic?: Pick<Cosmetic, 'kind' | 'color' | 'accent'> | null; // weekly-challenge cosmetic, own marker only
 }
 
 interface Options {
@@ -55,6 +56,7 @@ interface MarkerRuntime {
   song: Song; // last-known song data, kept around while sinking (after it's gone from `markers`)
   isMine: boolean;
   listenerCount: number;
+  cosmetic: OceanMarker['cosmetic'];
   sinkStartTime: number | null; // performance.now() timestamp when it started sinking, or null
 }
 
@@ -66,6 +68,52 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+// Draws a weekly-challenge cosmetic around the user's own marker, in place
+// of the plain green "this one's mine" ring: a gradient frame, a pulsing
+// glow, or expanding ripples, in the cosmetic's colours.
+function drawCosmeticRing(
+  ctx: CanvasRenderingContext2D,
+  cosmetic: NonNullable<OceanMarker['cosmetic']>,
+  left: number,
+  top: number,
+  size: number,
+  scale: number,
+  t: number
+) {
+  const radius = (CORNER + 3) * scale;
+  const gradient = ctx.createLinearGradient(left, top, left + size, top + size);
+  gradient.addColorStop(0, cosmetic.color);
+  gradient.addColorStop(1, cosmetic.accent);
+
+  ctx.save();
+
+  if (cosmetic.kind === 'ripple') {
+    // Two rings expanding outward and fading, offset by half a cycle.
+    for (let k = 0; k < 2; k++) {
+      const p = (t * 0.45 + k * 0.5) % 1;
+      const grow = p * 20;
+      ctx.globalAlpha = (1 - p) * 0.75;
+      roundedRect(ctx, left - 3 - grow, top - 3 - grow, size + 6 + grow * 2, size + 6 + grow * 2, radius + grow);
+      ctx.strokeStyle = k === 0 ? cosmetic.color : cosmetic.accent;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  if (cosmetic.kind === 'glow') {
+    ctx.shadowColor = cosmetic.color;
+    ctx.shadowBlur = 14 + (0.5 + 0.5 * Math.sin(t * 2.6)) * 14;
+  }
+
+  roundedRect(ctx, left - 3, top - 3, size + 6, size + 6, radius);
+  ctx.strokeStyle = gradient;
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 export function useOceanCanvas({ markers, onSelect, imageResolver }: Options) {
@@ -113,6 +161,7 @@ export function useOceanCanvas({ markers, onSelect, imageResolver }: Options) {
           song: m.song,
           isMine: m.isMine,
           listenerCount: m.listenerCount,
+          cosmetic: m.cosmetic ?? null,
           sinkStartTime: null,
         });
       } else {
@@ -121,6 +170,7 @@ export function useOceanCanvas({ markers, onSelect, imageResolver }: Options) {
         existing.song = m.song;
         existing.isMine = m.isMine;
         existing.listenerCount = m.listenerCount;
+        existing.cosmetic = m.cosmetic ?? null;
         existing.sinkStartTime = null;
       }
     });
@@ -271,7 +321,9 @@ export function useOceanCanvas({ markers, onSelect, imageResolver }: Options) {
         }
         ctx.restore();
 
-        if (!sinking && (rt.isMine || hoveredRef.current === rt.id)) {
+        if (!sinking && rt.isMine && rt.cosmetic) {
+          drawCosmeticRing(ctx, rt.cosmetic, left, top, size, scale, t);
+        } else if (!sinking && (rt.isMine || hoveredRef.current === rt.id)) {
           roundedRect(ctx, left - 2, top - 2, size + 4, size + 4, CORNER + 2);
           ctx.strokeStyle = rt.isMine ? '#1ED760' : '#22d3ee';
           ctx.lineWidth = 3;

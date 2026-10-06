@@ -127,4 +127,7 @@ async function getTokensBySpotifyUserId(spotifyUserId) {
   return result.rows[0] || null;
 }
 
-module.exports = { saveTokens, getTokens, getTokensBySpotifyUserId, getAllUserIds, useMemoryStore };
+// `pool` is shared with db/challengeStore.js so the app keeps one Postgres
+// connection pool instead of opening a second one (it's undefined in
+// in-memory mode).
+module.exports = { saveTokens, getTokens, getTokensBySpotifyUserId, getAllUserIds, useMemoryStore, pool };

@@ -59,12 +59,6 @@ export interface AppNotification {
   status: NotificationStatus;
 }
 
-export interface Challenge {
-  theme: string;
-  deadline: number; // epoch ms
-  mySubmission: { songId: string } | null;
-}
-
 export interface CatalogEntry {
   title: string;
   artist: string;
@@ -80,7 +74,6 @@ export interface AppState {
   notifications: AppNotification[];
   hasNotifDot: boolean;
   hasChatDot: boolean;
-  challenge: Challenge;
 }
 
 /* ---------- Live Spotify data (real backend, not MockApi) ----------
@@ -130,6 +123,8 @@ export interface SpotifyProfile {
   profileUrl: string | null;
   email: string | null; // requires the user-read-email scope
   profileImage: string | null;
+  // The weekly-challenge cosmetic they have switched on, or null.
+  activeCosmetic?: Cosmetic | null;
 }
 
 // GET /spotify/user/:spotifyUserId - another person's public profile (an
@@ -140,6 +135,7 @@ export interface HostProfile {
   displayName: string;
   profileUrl: string | null;
   profileImage: string | null;
+  activeCosmetic?: Cosmetic | null;
 }
 
 // GET /chat-requests/incoming, POST /chat-requests - a request to start a
@@ -173,4 +169,84 @@ export interface PublicPlaylist {
   image: string | null;
   trackCount: number;
   url: string | null;
+}
+
+/* ---------- Weekly challenges (real backend: backend/routes/challenges.js) ---------- */
+
+// 'frame' = solid ring, 'glow' = ring + pulsing glow, 'ripple' = ring +
+// expanding ripples. The backend owns the catalog and sends colours with
+// every cosmetic, so a new cosmetic needs no frontend change.
+export type CosmeticKind = 'frame' | 'glow' | 'ripple';
+
+export interface Cosmetic {
+  id: string;
+  name: string;
+  description: string;
+  kind: CosmeticKind;
+  color: string;
+  accent: string;
+}
+
+export interface ChallengeTrack {
+  id: string;
+  name: string | null;
+  artist: string | null;
+  albumArt: string | null;
+}
+
+export interface ChallengeCompletion {
+  weekKey: string;
+  challengeId: string;
+  theme: string;
+  completedAt: number; // epoch ms
+  track: ChallengeTrack;
+}
+
+// GET /challenges/current
+export interface CurrentChallenge {
+  challenge: {
+    id: string;
+    theme: string;
+    description: string;
+    cosmetic: Cosmetic;
+    weekKey: string;
+    startsAt: number; // epoch ms
+    endsAt: number; // epoch ms
+  };
+  serverNow: number; // server clock at response time, to correct for a wrong device clock
+  participantCount: number;
+  me: { completed: boolean; completion: ChallengeCompletion | null; ownsCosmetic: boolean } | null; // null = logged out
+}
+
+// GET /challenges/current/eligible-tracks - songs I can submit (heard this week)
+export interface EligibleTrack {
+  trackId: string;
+  name: string;
+  artist: string;
+  albumArt: string | null;
+  playedAt: string | null; // ISO; null for the song playing right now
+  nowPlaying: boolean;
+}
+
+// POST /challenges/current/complete
+export interface CompleteChallengeResult {
+  completed: true;
+  completion: ChallengeCompletion;
+  cosmetic: Cosmetic;
+  alreadyOwned: boolean; // a repeat from a later catalog cycle - nothing new unlocked
+}
+
+// GET /challenges/rewards - one entry per cosmetic I've collected
+export interface ChallengeReward {
+  cosmetic: Cosmetic;
+  earnedAt: number; // epoch ms
+  weekKey: string;
+  theme: string;
+  track: ChallengeTrack;
+  timesEarned: number;
+}
+
+export interface RewardsResponse {
+  rewards: ChallengeReward[];
+  activeCosmeticId: string | null;
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ExternalLink, MessageCircle } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
+import CosmeticAvatar from '../../components/CosmeticAvatar';
 import { useAuth } from '../../data/AuthContext';
 import { fetchHostProfile, sendChatRequest } from '../../lib/api';
 import type { HostProfile } from '../../data/types';
@@ -71,15 +72,22 @@ export default function HostProfilePage() {
           <p className="text-sm text-red-400">{error}</p>
         ) : (
           <div className="flex flex-col items-center gap-4 sm:flex-row">
-            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-cyan-400 bg-slate-300 shadow-md">
-              {profile?.profileImage ? (
-                <img src={profile.profileImage} alt={profile.displayName} className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-3xl font-semibold text-slate-700">
-                  {(profile?.displayName || '?').charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
+            {/* Shows whichever weekly-challenge cosmetic THEY have switched on. */}
+            <CosmeticAvatar cosmetic={profile?.activeCosmetic} size={112}>
+              <div
+                className={`flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-slate-300 shadow-md ${
+                  profile?.activeCosmetic ? '' : 'border-2 border-cyan-400'
+                }`}
+              >
+                {profile?.profileImage ? (
+                  <img src={profile.profileImage} alt={profile.displayName} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-semibold text-slate-700">
+                    {(profile?.displayName || '?').charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </CosmeticAvatar>
             <div className="flex-1 text-center sm:text-left">
               <p className="text-lg font-semibold text-cyan-100">{profile?.displayName}</p>
               {profile?.profileUrl && (

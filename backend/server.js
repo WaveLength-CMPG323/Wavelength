@@ -10,6 +10,8 @@ const session = require('express-session');
 const authRouter = require('./routes/auth');
 const spotifyRouter = require('./routes/spotify');
 const chatRequestsRouter = require('./routes/chatRequests');
+const challengesRouter = require('./routes/challenges');
+const challengeStore = require('./db/challengeStore');
 const { useMemoryStore } = require('./db/tokenStore');
 const { startOceanPoller } = require('./lib/spotifyPoller');
 
@@ -74,6 +76,7 @@ app.use(
 app.use('/auth', authRouter);
 app.use('/spotify', spotifyRouter);
 app.use('/chat-requests', chatRequestsRouter);
+app.use('/challenges', challengesRouter);
 
 app.get('/', (req, res) => {
   res.send('WaveLength backend is running.');
@@ -931,4 +934,12 @@ httpServer.listen(PORT, () => {
   }
   startOceanPoller(io);
   console.log('Ocean poller started - checking all logged-in users every 1s.');
+
+  // Creates the weekly-challenge tables if they don't exist yet (no-op in
+  // in-memory mode). Not fatal if it fails - the rest of the app still
+  // works - but challenges will error until the DB is reachable.
+  challengeStore
+    .ensureSchema()
+    .then(() => console.log('Weekly challenge tables ready.'))
+    .catch((err) => console.error('Could not set up weekly challenge tables:', err.message));
 });

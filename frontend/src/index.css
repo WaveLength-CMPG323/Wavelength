@@ -29,3 +29,23 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari, new Edge */
 }
+
+/* ---------- Weekly-challenge cosmetics (see components/CosmeticAvatar.tsx) ----------
+   Colours come in as --wl-c1 / --wl-c2 custom properties, so one set of
+   keyframes serves every cosmetic. */
+@keyframes wl-glow-pulse {
+  0%, 100% { box-shadow: 0 0 6px 1px color-mix(in srgb, var(--wl-c1) 60%, transparent); }
+  50%      { box-shadow: 0 0 18px 5px color-mix(in srgb, var(--wl-c1) 85%, transparent); }
+}
+@keyframes wl-ripple-out {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  100% { transform: scale(1.75); opacity: 0; }
+}
+.wl-glow   { animation: wl-glow-pulse 2.4s ease-in-out infinite; }
+.wl-ripple { animation: wl-ripple-out 2.4s ease-out infinite; }
+
+/* Respect "reduce motion": keep the colours, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .wl-glow { animation: none; box-shadow: 0 0 10px 2px color-mix(in srgb, var(--wl-c1) 70%, transparent); }
+  .wl-ripple { animation: none; opacity: 0; }
+}
