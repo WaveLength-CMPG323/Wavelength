@@ -1,0 +1,296 @@
+@import "tailwindcss";
+
+/* `light:` variant - applies when the root has data-theme="light" (see
+   ThemeContext). Used where a component keeps its own dark-glass look by
+   default and only needs targeted overrides for light mode. */
+@custom-variant light (&:where([data-theme='light'], [data-theme='light'] *));
+
+/* ------------------------------------------------------------------ *
+ * WaveLength theme tokens
+ *
+ * Dark ("deep ocean") is the base -- it matches what this app has always
+ * looked like, calibrated against the hardcoded colors used across the
+ * app before this token pass (text-cyan-100 headings, text-cyan-400
+ * icons, slate-300/400/500 body/caption/placeholder text, etc.). Light
+ * mode overrides the same tokens under [data-theme='light'], which
+ * ThemeContext sets on <html> (and index.html sets before first paint,
+ * so there's no flash).
+ *
+ * Components use the utilities generated from the @theme block below
+ * (bg-wl-bg, text-wl-fg, text-wl-link, ...) instead of raw colors, so a
+ * whole page re-themes by swapping these vars -- no `dark:` variant
+ * anywhere in this app. --wl-accent (Spotify green) and --wl-treasure
+ * (Weekly Challenge treasure-chest amber) are ours, not part of Johan's
+ * original token set, but ride the same @property/@theme/transition
+ * system as the rest. */
+:root {
+  --wl-bg: #02182b;       /* page shell */
+  --wl-panel: #04385a;    /* cards / panels / inputs */
+  --wl-accent: #1ED760;   /* Spotify green, primary CTA (same in both themes) */
+  --wl-treasure: #f59e0b; /* amber accent for the Weekly Challenge treasure-chest reveal */
+
+  --wl-fg: #f1f5f9;       /* primary text (was body's hardcoded color) */
+  --wl-title: #cffafe;    /* headings, nav text (was text-cyan-100) */
+  --wl-cyan: #a5f3fc;     /* emphasised secondary text (was text-cyan-200) */
+  --wl-link: #67e8f9;     /* links / hover text (was text-cyan-300) */
+  --wl-icon: #22d3ee;     /* icons, small accents (was text-cyan-400) */
+  --wl-soft: #cbd5e1;     /* body copy (was text-slate-300) */
+  --wl-muted: #94a3b8;    /* captions (was text-slate-400) */
+  --wl-faint: #64748b;    /* placeholders (was text-slate-500 / faded cyan-100) */
+  --wl-danger: #f87171;   /* errors / destructive actions (was text-red-400) */
+  --wl-scrim: rgba(0, 0, 0, 0.6); /* modal backdrop */
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --wl-bg: #e8f4fd;
+  --wl-panel: #ffffff;
+  --wl-accent: #1ED760;
+  --wl-treasure: #b45309; /* deepened amber for contrast on a light panel */
+
+  --wl-fg: #0b2a43;
+  --wl-title: #0a3b5c;
+  --wl-cyan: #0c4a6e;
+  --wl-link: #0a6f9f;
+  --wl-icon: #0891b2;
+  --wl-soft: #2b4a63;
+  --wl-muted: #4d6b84;
+  --wl-faint: #6b8499;
+  --wl-danger: #dc2626;
+  --wl-scrim: rgba(8, 36, 58, 0.42);
+
+  color-scheme: light;
+}
+
+/* Registering the tokens as <color>s lets the browser interpolate them, so
+   *everything* built on them (pages, nav, panels, text) cross-fades during
+   a theme switch instead of snapping. */
+@property --wl-bg       { syntax: '<color>'; inherits: true; initial-value: #02182b; }
+@property --wl-panel    { syntax: '<color>'; inherits: true; initial-value: #04385a; }
+@property --wl-accent   { syntax: '<color>'; inherits: true; initial-value: #1ED760; }
+@property --wl-treasure { syntax: '<color>'; inherits: true; initial-value: #f59e0b; }
+@property --wl-fg       { syntax: '<color>'; inherits: true; initial-value: #f1f5f9; }
+@property --wl-title    { syntax: '<color>'; inherits: true; initial-value: #cffafe; }
+@property --wl-cyan     { syntax: '<color>'; inherits: true; initial-value: #a5f3fc; }
+@property --wl-link     { syntax: '<color>'; inherits: true; initial-value: #67e8f9; }
+@property --wl-icon     { syntax: '<color>'; inherits: true; initial-value: #22d3ee; }
+@property --wl-soft     { syntax: '<color>'; inherits: true; initial-value: #cbd5e1; }
+@property --wl-muted    { syntax: '<color>'; inherits: true; initial-value: #94a3b8; }
+@property --wl-faint    { syntax: '<color>'; inherits: true; initial-value: #64748b; }
+@property --wl-danger   { syntax: '<color>'; inherits: true; initial-value: #f87171; }
+@property --wl-scrim    { syntax: '<color>'; inherits: true; initial-value: rgba(0, 0, 0, 0.6); }
+
+:root {
+  --wl-theme-duration: 1.2s;
+  transition:
+    --wl-bg var(--wl-theme-duration) ease,
+    --wl-panel var(--wl-theme-duration) ease,
+    --wl-accent var(--wl-theme-duration) ease,
+    --wl-treasure var(--wl-theme-duration) ease,
+    --wl-fg var(--wl-theme-duration) ease,
+    --wl-title var(--wl-theme-duration) ease,
+    --wl-cyan var(--wl-theme-duration) ease,
+    --wl-link var(--wl-theme-duration) ease,
+    --wl-icon var(--wl-theme-duration) ease,
+    --wl-soft var(--wl-theme-duration) ease,
+    --wl-muted var(--wl-theme-duration) ease,
+    --wl-faint var(--wl-theme-duration) ease,
+    --wl-danger var(--wl-theme-duration) ease,
+    --wl-scrim var(--wl-theme-duration) ease;
+}
+
+@theme inline {
+  --color-wl-bg: var(--wl-bg);
+  --color-wl-panel: var(--wl-panel);
+  --color-wl-accent: var(--wl-accent);
+  --color-wl-treasure: var(--wl-treasure);
+  --color-wl-fg: var(--wl-fg);
+  --color-wl-title: var(--wl-title);
+  --color-wl-cyan: var(--wl-cyan);
+  --color-wl-link: var(--wl-link);
+  --color-wl-icon: var(--wl-icon);
+  --color-wl-soft: var(--wl-soft);
+  --color-wl-muted: var(--wl-muted);
+  --color-wl-faint: var(--wl-faint);
+  --color-wl-danger: var(--wl-danger);
+  --color-wl-scrim: var(--wl-scrim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --wl-theme-duration: 0.01s; }
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--wl-bg);
+  color: var(--wl-fg);
+}
+
+/* Hides the scrollbar's visible track/thumb while leaving the element
+   scrollable (mouse wheel, touch, keyboard) - used on panels like the
+   ocean song panel, where a visible scrollbar looked messy against the
+   rounded card even when there was barely anything to scroll. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, new Edge */
+}
+
+/* Navigation panels (Weekly Challenge, Notifications, Create Group) -
+   scroll normally without visible browser scrollbars. */
+.nav-panel-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.nav-panel-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* =========================================================
+   LOGIN PAGE
+   Rebuilt to match the Ocean page's own visual language (dark sea
+   gradient, cyan wave bands, drifting bubbles) instead of the old
+   redesign-mockup styling this replaces. Purely decorative "display"
+   layers only - see useOceanCanvas.ts for the canvas equivalents these
+   are modelled on (WAVE_BANDS colors, bubble drift).
+   ========================================================= */
+
+.login-bubble {
+  position: absolute;
+  bottom: -5vh;
+  border-radius: 9999px;
+  background: rgba(165, 243, 252, 0.16);
+  animation-name: login-bubble-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+:root[data-theme='light'] .login-bubble {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes login-bubble-rise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-115vh) translateX(12px);
+    opacity: 0;
+  }
+}
+
+.login-wave-band {
+  transform-origin: center bottom;
+  animation-name: login-wave-drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.login-wave-band-1 {
+  animation-duration: 14s;
+}
+
+.login-wave-band-2 {
+  animation-duration: 18s;
+  animation-delay: -4s;
+}
+
+.login-wave-band-3 {
+  animation-duration: 22s;
+  animation-delay: -9s;
+}
+
+@keyframes login-wave-drift {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-3%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-bubble,
+  .login-wave-band {
+    animation: none;
+  }
+}
+
+/* =========================================================
+   OCEAN PAGE - Weekly Challenge treasure-chest reveal
+   The two large chest bodies use a 3-stop gradient (bright lid ->
+   dark wood -> darker base). They rest on the dark underwater seabed,
+   which is dark in BOTH themes, so the chests deliberately keep the same
+   vivid values in both too (no light-mode override - an earlier one that
+   swapped in pale panel colours made them look washed out).
+   ========================================================= */
+.wl-chest-body {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: linear-gradient(to bottom, rgba(217, 119, 6, 0.4), rgba(120, 53, 15, 0.6), rgba(69, 26, 3, 0.8));
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.4);
+}
+
+/* =========================================================
+   Profile / song-marker borders (weekly-challenge rewards) - see
+   components/BorderFrame.tsx and lib/borders.ts. Two layers per border:
+   each is slowly spun (circles) or rocked (squares) by an outer element,
+   and slowly "breathes" (swells and settles) via the inner <img>. Durations
+   mirror borderMotion() in lib/borders.ts, which the ocean canvas uses.
+   ========================================================= */
+.wl-border-move,
+.wl-border-breathe {
+  transform-origin: 50% 50%;
+}
+
+@keyframes wl-border-breathe-1 {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.075); }
+}
+@keyframes wl-border-breathe-2 {
+  0%, 100% { transform: scale(1.03); }
+  50% { transform: scale(1); }
+}
+@keyframes wl-border-spin { to { transform: rotate(360deg); } }
+@keyframes wl-border-spin-reverse { to { transform: rotate(-360deg); } }
+@keyframes wl-border-rock-1 {
+  0%, 100% { transform: rotate(-7deg); }
+  50% { transform: rotate(7deg); }
+}
+@keyframes wl-border-rock-2 {
+  0%, 100% { transform: rotate(6deg); }
+  50% { transform: rotate(-6deg); }
+}
+
+.wl-border-breathe-1 { animation: wl-border-breathe-1 7s ease-in-out infinite; }
+.wl-border-breathe-2 { animation: wl-border-breathe-2 9s ease-in-out infinite; }
+.wl-border-circle-1 { animation: wl-border-spin 120s linear infinite; }
+.wl-border-circle-2 { animation: wl-border-spin-reverse 180s linear infinite; }
+.wl-border-square-1 { animation: wl-border-rock-1 11s ease-in-out infinite; }
+.wl-border-square-2 { animation: wl-border-rock-2 15s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-border-move,
+  .wl-border-breathe { animation: none !important; }
+}
+
+/* Song Details - allow scrolling without showing browser scrollbars */
+.song-details-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.song-details-scroll::-webkit-scrollbar {
+  display: none;
+}
