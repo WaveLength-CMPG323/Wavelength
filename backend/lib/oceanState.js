@@ -85,6 +85,7 @@ function updateSessionFromPoll(sessionId, spotifyData, accountInfo) {
   sessions.set(sessionId, {
     trackId,
     trackUri: spotifyData.item.uri,
+    albumUri: spotifyData.item.album?.uri || null, // lets a join fall back to album-context playback (see spotifyClient.playTrackAt)
     trackName: spotifyData.item.name,
     artist: spotifyData.item.artists?.map((a) => a.name).join(', '),
     albumArt: spotifyData.item.album?.images?.[0]?.url,
@@ -137,6 +138,7 @@ function computeGroups() {
       group = {
         trackId: session.trackId,
         trackUri: session.trackUri,
+        albumUri: session.albumUri,
         trackName: session.trackName,
         artist: session.artist,
         albumArt: session.albumArt,
@@ -178,6 +180,7 @@ function computeGroups() {
   return Array.from(groups.values()).map((g) => ({
     trackId: g.trackId,
     trackUri: g.trackUri,
+    albumUri: g.albumUri,
     trackName: g.trackName,
     artist: g.artist,
     albumArt: g.albumArt,
@@ -210,6 +213,26 @@ function getLiveProgressMs(group) {
 function isSessionInGroup(sessionId, trackId) {
   const session = sessions.get(sessionId);
   return !!session && !session.sunk && session.trackId === trackId;
+}
+
+// The same fields GET /spotify/currently-playing returns, answered from what
+// the background poller already knows instead of asking Spotify again. Every
+// open browser tab used to make its own request to Spotify once a second on
+// top of the poller's - the main reason an app with a handful of users hit
+// Spotify's rate limit. `null` = nothing playing (or not polled yet).
+function getCachedPlayback(sessionId) {
+  const session = sessions.get(sessionId);
+  if (!session) return null;
+  const elapsed = session.isPlaying ? Date.now() - session.lastPolledAt : 0;
+  return {
+    playing: session.isPlaying,
+    trackId: session.trackId,
+    track: session.trackName,
+    artist: session.artist,
+    albumArt: session.albumArt,
+    progressMs: Math.min(session.durationMs ?? Infinity, (session.progressMs || 0) + elapsed),
+    durationMs: session.durationMs,
+  };
 }
 
 function getSession(sessionId) {
@@ -336,6 +359,7 @@ module.exports = {
   computeGroups,
   getLiveProgressMs,
   isSessionInGroup,
+  getCachedPlayback,
   getSession,
   removeSession,
   setFollow,

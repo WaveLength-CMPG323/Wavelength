@@ -8,10 +8,17 @@ export default function QuotaPopup({
   open,
   message,
   onClose,
+  actionHref,
+  actionLabel,
+  title = 'Quota reached',
 }: {
+  title?: string;
   open: boolean;
   message: string;
   onClose: () => void;
+  /** Optional extra link shown above "Got it" (opens in a new tab). */
+  actionHref?: string;
+  actionLabel?: string;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -47,13 +54,23 @@ export default function QuotaPopup({
               <AlertTriangle className="h-6 w-6" />
             </div>
             <h2 id="quota-popup-title" className="mt-3 text-lg font-bold text-wl-title">
-              Quota reached
+              {title}
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-wl-soft">{message}</p>
+            {actionHref && actionLabel && (
+              <a
+                href={actionHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 block w-full rounded-xl border border-amber-400/50 py-2.5 text-sm font-semibold text-wl-title transition-colors hover:bg-amber-400/10"
+              >
+                {actionLabel}
+              </a>
+            )}
             <button
               type="button"
               onClick={onClose}
-              className="mt-5 w-full rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-cyan-300 py-2.5 text-sm font-bold text-slate-950"
+              className="mt-3 w-full rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-cyan-300 py-2.5 text-sm font-bold text-slate-950"
             >
               Got it
             </button>

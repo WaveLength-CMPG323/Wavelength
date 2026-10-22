@@ -15,7 +15,9 @@ outside the picture's edge.
 To add a border: write a function like bubble_ring() below, add it to DESIGNS
 with a new key, run this script, then add the matching entry to
 frontend/src/lib/borders.ts and backend/lib/challengePool.js (and run the SQL
-in backend/db/borders-migration.sql for the new reward row).
+in backend/db/borders-migration.sql for the new reward row). A gifted border that
+must never be a weekly reward (like 'hearts') skips challengePool.js and gets its
+own SQL file instead (backend/db/hearts-border.sql).
 """
 import math, random, bisect
 
@@ -233,6 +235,44 @@ def dino_wild(shape, rnd):
     return defs, l1, l2
 
 
+# ---- Hearts: pink hearts and white stars all over (a gifted border - NOT in the
+# weekly-challenge reward pool, see backend/db/hearts-border.sql) -------------
+HEART_PINKS = ['#ff4d94', '#ff6fae', '#ff8cc0', '#ffa6cf', '#f0357f']
+
+def heart(cx, cy, s, rot, fill):
+    # unit heart (about 2.4 wide) scaled by s; the outline stays about 1.4px whatever the size
+    return (f'<g transform="translate({cx:.1f} {cy:.1f}) rotate({rot:.0f}) scale({s:.2f})">'
+            f'<path d="M0 .9 C-1.15 .1 -1.25 -.95 -.55 -.98 C-.22 -1 0 -.72 0 -.5 C0 -.72 .22 -1 .55 -.98 C1.25 -.95 1.15 .1 0 .9Z" '
+            f'fill="{fill}" stroke="#ffe3f1" stroke-opacity=".85" stroke-width="{1.4/s:.3f}" stroke-linejoin="round"/>'
+            f'<path d="M-.72 -.5 Q-.58 -.78 -.28 -.76" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="{1.6/s:.3f}" stroke-linecap="round"/></g>')
+
+def white_star(cx, cy, s, rot):
+    # 4-point sparkle, white with a thin pink outline so it still shows on a light background
+    return (f'<path transform="translate({cx:.1f} {cy:.1f}) rotate({rot:.0f})" fill="#fff" stroke="#ff9ccb" stroke-width="1" stroke-linejoin="round" '
+            f'd="M0 {-s} Q{s*.14:.2f} {-s*.14:.2f} {s} 0 Q{s*.14:.2f} {s*.14:.2f} 0 {s} Q{-s*.14:.2f} {s*.14:.2f} {-s} 0 Q{-s*.14:.2f} {-s*.14:.2f} 0 {-s}Z"/>')
+
+def hearts_and_stars(shape, rnd):
+    l1, l2 = [], []
+    # front: bigger hearts hugging the picture, with white stars tucked between them
+    for x, y, nx, ny in place(shape, 34, rnd, 0.45):
+        d = rnd.uniform(3, 20)
+        l1.append(heart(x+nx*d, y+ny*d, rnd.uniform(8, 14), rnd.uniform(-28, 28), rnd.choice(HEART_PINKS)))
+    for x, y, nx, ny in place(shape, 16, rnd, 0.5):
+        d = rnd.uniform(6, 26)
+        l1.append(white_star(x+nx*d, y+ny*d, rnd.choice([5, 6, 8, 10]), rnd.uniform(-15, 15)))
+    # back: smaller hearts further out, lots of white stars and tiny dots
+    for x, y, nx, ny in place(shape, 30, rnd, 0.45):
+        d = rnd.uniform(18, 42)
+        l2.append(heart(x+nx*d, y+ny*d, rnd.uniform(4.5, 8), rnd.uniform(-35, 35), rnd.choice(HEART_PINKS)))
+    for x, y, nx, ny in place(shape, 36, rnd, 0.5):
+        d = rnd.uniform(12, 46)
+        l2.append(white_star(x+nx*d, y+ny*d, rnd.choice([3, 4, 5, 7]), rnd.uniform(-15, 15)))
+    for x, y, nx, ny in place(shape, 70, rnd, 0.5):
+        d = rnd.uniform(0, 46)
+        l2.append(f'<circle cx="{x+nx*d:.1f}" cy="{y+ny*d:.1f}" r="{rnd.uniform(1,2.2):.1f}" fill="#fff" stroke="#ff9ccb" stroke-width=".6" opacity=".95"/>')
+    return GLOW(8, 1.4), l1, l2
+
+
 # (key, display name, generator). Order fixes each design's random seed.
 DESIGNS = [
     ('bubble-ring', 'Bubble Ring', bubble_ring),
@@ -243,6 +283,7 @@ DESIGNS = [
     ('starfish-shells', 'Starfish & Shells', starfish_shells),
     ('skeletons', 'Skeletons', dino_wild),
     ('dino-eggs', 'Dino Eggs', dino_eggs),
+    ('hearts', 'Hearts & Stars', hearts_and_stars),  # gifted, not a challenge reward
 ]
 
 def layer_svg(defs, layer):

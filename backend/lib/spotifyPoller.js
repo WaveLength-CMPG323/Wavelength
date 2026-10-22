@@ -3,7 +3,7 @@ const { getValidAccessToken } = require('./authHelper');
 const { getCurrentlyPlaying, playTrackAt, getArtistGenres } = require('./spotifyClient');
 const { getGenresForArtist } = require('./genreCache');
 const oceanState = require('./oceanState');
-const { isRateLimited, isRateLimitError, noteRateLimit, syncQuotaAnnouncement } = require('./spotifyQuota');
+const { isRateLimited, isRateLimitError, isUserCapError, noteRateLimit, syncQuotaAnnouncement } = require('./spotifyQuota');
 
 // Spotify's token endpoint returns one of these in the error body when a
 // refresh can never succeed again (the refresh token was revoked, expired,
@@ -76,8 +76,14 @@ async function pollAllSessions(io) {
         // every restart like the old in-memory store. Clean it up so it
         // stops being retried and stops eating into the app's Spotify API
         // rate limit for a session nobody can use anyway.
-        if (isPermanentAuthFailure(err)) {
-          console.error(`Session ${userId} has a permanently invalid Spotify token - deleting it.`);
+        //
+        // The same goes for an account Spotify refuses because it isn't on
+        // the app's allowed-users list ("The user is not registered for this
+        // application"): it failed every cycle, forever, using up requests
+        // from the shared rate limit. Dropping it just means that person has
+        // to log in again once they have been added.
+        if (isPermanentAuthFailure(err) || isUserCapError(err)) {
+          console.error(`Session ${userId} can no longer use Spotify (invalid token or not on the allowed-users list) - deleting it.`);
           oceanState.removeSession(userId);
           await deleteTokens(userId).catch(() => {});
         }
@@ -145,7 +151,7 @@ async function syncFollowers() {
               hostSession.durationMs || Infinity
             )
           : hostSession.progressMs;
-        await playTrackAt(accessToken, hostSession.trackUri, positionMs);
+        await playTrackAt(accessToken, hostSession.trackUri, positionMs, { albumUri: hostSession.albumUri });
         oceanState.clearFollowSyncError(followerSessionId);
         oceanState.setLastSyncedTrackId(followerSessionId, hostSession.trackId);
       } catch (err) {

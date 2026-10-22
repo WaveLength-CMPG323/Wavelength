@@ -3,9 +3,9 @@
 // A challenge is "live" while its row has is_active = TRUE. When its
 // `deadline` passes, rotateChallenges() ends it (is_active = FALSE) and
 // starts the next one drawn from lib/challengePool.js, stamping it with a
-// fresh start time (created_at) and deadline (start + CHALLENGE_DURATION),
-// so the countdown the frontend shows begins when the challenge begins and
-// ends when it ends.
+// fresh start time (created_at) and a deadline on the next Monday 00:00 SAST
+// (see nextWeekStart), so the countdown the frontend shows begins when the
+// challenge begins and ends when it ends.
 //
 // "Unjoining" everybody needs no deletes: a join is a challenge_submissions
 // row for ONE challenge_id, and the frontend only ever asks about the
@@ -25,11 +25,34 @@
 const pool = require('../db/pool');
 const { CHALLENGE_POOL, REWARDS } = require('./challengePool');
 
-// Length of one challenge. Default one week; set CHALLENGE_DURATION_HOURS
-// (e.g. 1) to speed rotation up for testing.
-function durationMs() {
+// Set CHALLENGE_DURATION_HOURS (e.g. 1) to speed rotation up for testing.
+// Left unset (the normal case), challenges follow the calendar instead: each
+// one ends - and the next begins - every Monday at 00:00 South African
+// Standard Time (SAST, UTC+2, which has no daylight saving, so that is
+// Sunday 22:00 UTC all year).
+function testDurationMs() {
   const hours = Number(process.env.CHALLENGE_DURATION_HOURS);
-  return (Number.isFinite(hours) && hours > 0 ? hours : 24 * 7) * 60 * 60 * 1000;
+  return Number.isFinite(hours) && hours > 0 ? hours * 60 * 60 * 1000 : null;
+}
+
+const SAST_OFFSET_MS = 2 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// The next Monday 00:00 SAST strictly after `from`. A challenge that would
+// get less than a day (e.g. the server woke up late on a Sunday night) runs
+// to the Monday after instead, so no challenge is ever just a few hours long.
+function nextWeekStart(from) {
+  const sast = new Date(from.getTime() + SAST_OFFSET_MS); // read the clock in SAST via UTC getters
+  const daysToMonday = ((8 - sast.getUTCDay()) % 7) || 7;
+  const monday = new Date(
+    Date.UTC(sast.getUTCFullYear(), sast.getUTCMonth(), sast.getUTCDate() + daysToMonday) - SAST_OFFSET_MS
+  );
+  return monday.getTime() - from.getTime() < DAY_MS ? new Date(monday.getTime() + 7 * DAY_MS) : monday;
+}
+
+function challengeDeadline(startedAt) {
+  const testMs = testDurationMs();
+  return testMs ? new Date(startedAt.getTime() + testMs) : nextWeekStart(startedAt);
 }
 
 const CHECK_INTERVAL_MS = 15 * 1000;
@@ -105,7 +128,7 @@ async function rotateChallenges({ io, force = false } = {}) {
     );
 
     const startedAt = new Date();
-    const deadline = new Date(startedAt.getTime() + durationMs());
+    const deadline = challengeDeadline(startedAt);
     const inserted = await client.query(
       `INSERT INTO challenges (theme, description, reward_id, deadline, is_active, created_at)
        VALUES ($1, $2, $3, $4, TRUE, $5)
@@ -176,8 +199,11 @@ function startChallengeScheduler(io) {
   tick();
   setInterval(tick, CHECK_INTERVAL_MS);
   console.log(
-    `Challenge rotation started - checking every ${CHECK_INTERVAL_MS / 1000}s, challenges last ${durationMs() / 3600000}h.`
+    `Challenge rotation started - checking every ${CHECK_INTERVAL_MS / 1000}s, ` +
+      (testDurationMs()
+        ? `challenges last ${testDurationMs() / 3600000}h (test mode).`
+        : 'a new challenge starts every Monday 00:00 SAST.')
   );
 }
 
-module.exports = { rotateChallenges, ensureActiveChallenge, syncPoolDescriptions, startChallengeScheduler };
+module.exports = { nextWeekStart, rotateChallenges, ensureActiveChallenge, syncPoolDescriptions, startChallengeScheduler };

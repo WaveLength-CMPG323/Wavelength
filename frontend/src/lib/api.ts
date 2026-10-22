@@ -92,7 +92,10 @@ export async function fetchCurrentlyPlaying(): Promise<MyPlayback> {
   return res.json();
 }
 
-export async function joinTrack(trackUri: string, trackId: string): Promise<{ success: true; alreadyListening?: boolean }> {
+export async function joinTrack(
+  trackUri: string,
+  trackId: string,
+): Promise<{ success: true; alreadyListening?: boolean; device?: { name: string; type: string } | null; playing?: boolean | null }> {
   const res = await apiFetch('/spotify/join', {
     method: 'POST',
     body: JSON.stringify({ trackUri, trackId }),

@@ -183,12 +183,126 @@ async function resumePlayback(accessToken) {
 // Starts a SPECIFIC track at a specific position - this is what "joining"
 // a song already playing in the ocean uses, so the listener starts near
 // the live position instead of from the beginning.
-async function playTrackAt(accessToken, trackUri, positionMs) {
+//
+// The target device is chosen explicitly. Without a device_id Spotify sends
+// the command to whatever it remembers as the account's "active" device,
+// and it answers 204 (success) even when that device is stale - an app that
+// was closed, a phone that went to sleep, or a different device from the one
+// the person is looking at - so the song never starts anywhere they can hear.
+// GET /me/player/devices only lists devices that are online right now, so we
+// aim at one of those instead.
+async function pickPlaybackDevice(accessToken) {
+  try {
+    const res = await axios.get('https://api.spotify.com/v1/me/player/devices', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const devices = (res.data?.devices || []).filter((d) => d.id && !d.is_restricted);
+    return devices.find((d) => d.is_active) || devices[0] || null;
+  } catch {
+    return null; // fall back to Spotify's own choice rather than failing the join
+  }
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Moves the account's playback to this device (without starting anything).
+// An idle phone usually only starts listening to remote "play" commands
+// after it has been made the active device like this.
+async function transferPlayback(accessToken, deviceId) {
   await axios.put(
-    'https://api.spotify.com/v1/me/player/play',
-    { uris: [trackUri], position_ms: Math.max(0, Math.floor(positionMs || 0)) },
+    'https://api.spotify.com/v1/me/player',
+    { device_ids: [deviceId], play: false },
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
+}
+
+// What Spotify says the account is doing right now: is it playing this
+// track, plus a short summary of the player (for the logs and the join
+// response, so a phone that ignores commands can be diagnosed).
+async function checkPlayer(accessToken, trackUri) {
+  try {
+    const res = await axios.get('https://api.spotify.com/v1/me/player', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const d = res.status === 200 ? res.data : null;
+    if (!d) return { playing: false, state: null };
+    return {
+      playing: !!(d.is_playing && (d.item?.uri === trackUri || d.item?.linked_from?.uri === trackUri)),
+      state: {
+        isPlaying: !!d.is_playing,
+        track: d.item?.name || null,
+        device: d.device?.name || null,
+        deviceActive: d.device?.is_active ?? null,
+        volume: d.device?.volume_percent ?? null,
+        privateSession: d.device?.is_private_session ?? null,
+        disallows: Object.keys(d.actions?.disallows || {}),
+      },
+    };
+  } catch (err) {
+    return { playing: false, state: { error: err.response?.status || err.message } };
+  }
+}
+
+// Polls for up to `ms`, because a phone that was asleep can take several
+// seconds to start after Spotify says "204 accepted".
+async function waitUntilPlaying(accessToken, trackUri, ms) {
+  let last = { playing: false, state: null };
+  for (let waited = 0; waited < ms; waited += 1000) {
+    await sleep(1000);
+    last = await checkPlayer(accessToken, trackUri);
+    if (last.playing) break;
+  }
+  return last;
+}
+
+// `verify: true` (used by the "Listen on Spotify" button, where the person is
+// waiting) re-checks after a moment that the song really started and, if the
+// phone ignored the first command, sends it once more. Returns
+// { device, status, playing } - `playing` is null when it wasn't checked.
+async function playTrackAt(accessToken, trackUri, positionMs, { verify = false, albumUri = null } = {}) {
+  const device = await pickPlaybackDevice(accessToken);
+  const position_ms = Math.max(0, Math.floor(positionMs || 0));
+  const urisBody = { uris: [trackUri], position_ms };
+  // Spotify now accepts the plain track-list request (urisBody) with a 204
+  // and then loads nothing, so the primary request asks for the same track
+  // inside its album instead; the track list stays as the fallback.
+  const albumBody = albumUri ? { context_uri: albumUri, offset: { uri: trackUri }, position_ms } : null;
+  const body = albumBody || urisBody;
+  const config = {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    ...(device ? { params: { device_id: device.id } } : {}),
+  };
+
+  // A device that isn't the active one is woken up first.
+  if (device && !device.is_active) {
+    try {
+      await transferPlayback(accessToken, device.id);
+      await sleep(900);
+    } catch {
+      // Not fatal - the play command below still names the device.
+    }
+  }
+
+  let res = await axios.put('https://api.spotify.com/v1/me/player/play', body, config);
+  let playing = null;
+
+  let player = null;
+  let method = albumBody ? 'album-context' : 'uris';
+  if (verify) {
+    player = await waitUntilPlaying(accessToken, trackUri, 4000);
+    if (!player.playing) {
+      // The first request was accepted but nothing started: try the other kind.
+      const retryBody = albumBody ? urisBody : body;
+      method = albumBody ? 'uris (fallback)' : 'uris (retry)';
+      res = await axios.put('https://api.spotify.com/v1/me/player/play', retryBody, config);
+      player = await waitUntilPlaying(accessToken, trackUri, 4000);
+    }
+    playing = player.playing;
+  }
+
+  // device: which device we aimed at; status: Spotify's answer (204 = done,
+  // 202 = accepted but the device was slow/unavailable).
+  return { device: device ? { name: device.name, type: device.type } : null, status: res.status, playing, method, player: player ? player.state : null };
 }
 
 async function pausePlayback(accessToken) {

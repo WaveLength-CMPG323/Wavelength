@@ -317,8 +317,16 @@ router.post('/submit', async (req, res) => {
     let playbackStarted = false;
     let playbackError = null;
     try {
-      await playTrackAt(accessToken, trackData.uri, 0);
-      playbackStarted = true;
+      const played = await playTrackAt(accessToken, trackData.uri, 0, {
+        verify: true,
+        albumUri: trackData.album?.uri || null,
+      });
+      // `playing` is false when Spotify accepted the command but the device
+      // never started the song (it is null only when not checked).
+      playbackStarted = played.playing !== false;
+      if (!playbackStarted) {
+        playbackError = 'Entry saved, but your Spotify did not start the song. Open Spotify on a device and play it yourself to show up in the ocean.';
+      }
     } catch (playErr) {
       const status = playErr.response?.status;
       const spotifyMessage = playErr.response?.data?.error?.message;

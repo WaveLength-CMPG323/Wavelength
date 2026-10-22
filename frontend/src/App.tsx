@@ -8,6 +8,7 @@ import ChatPage from './features/chat/ChatPage';
 import RequireAuth from './features/auth/RequireAuth';
 import { useChat } from './data/ChatContext';
 import QuotaWatcher from './components/QuotaWatcher';
+import { PresenterGate, PresentEntry } from './features/presenter/PresenterGate';
 
 export default function App() {
   // "You were added to <group>" toast - global because it needs to be
@@ -21,6 +22,8 @@ export default function App() {
         {/* The ocean is the landing page: visible to guests and logged-in users alike. */}
         <Route path="/" element={<OceanPage />} />
         <Route path="/login" element={<LoginPage />} />
+        {/* Hidden presenter mode for recording the demo video; see features/presenter. */}
+        <Route path="/present" element={<PresentEntry />} />
 
         {/* Everything below needs an account. */}
         <Route path="/profile" element={<RequireAuth><MyProfilePage /></RequireAuth>} />
@@ -30,6 +33,7 @@ export default function App() {
       </Routes>
 
       <QuotaWatcher />
+      <PresenterGate />
 
       <button
         type="button"

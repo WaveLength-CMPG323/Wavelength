@@ -58,6 +58,8 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
   const [joining, setJoining] = useState(false);
   const [following, setFollowing] = useState(false);
   const [error, setError] = useState('');
+  const [startedNote, setStartedNote] = useState('');
+  const [startedWarn, setStartedWarn] = useState(false); // true = Spotify accepted the command but the device didn't start
   const [followError, setFollowError] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [saved, setSaved] = useState(false);
@@ -69,6 +71,8 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
   // (mirrors getLiveProgressMs on the backend).
   useEffect(() => {
     setError('');
+    setStartedNote('');
+    setStartedWarn(false);
     setSaved(false);
     setSaving(false);
     setSaveError('');
@@ -133,9 +137,22 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
     if (!group) return;
     if (!isLoggedIn) return login();
     setError('');
+    setStartedNote('');
+    setStartedWarn(false);
     setJoining(true);
     try {
-      await joinTrack(group.trackUri, group.trackId);
+      const res = await joinTrack(group.trackUri, group.trackId);
+      // Say where the song was sent, so "nothing happened" can be told apart
+      // from "it started on a different device than the one in front of you".
+      if (res.alreadyListening) setStartedNote("You're already listening to this song.");
+      else if (res.playing === false) {
+        setStartedWarn(true);
+        setStartedNote(
+          `Spotify accepted the command, but "${res.device?.name ?? 'your device'}" didn't start playing. Open the Spotify app on it, play any song for a few seconds, then try again - or open the song yourself below.`,
+        );
+      }
+      else if (res.device) setStartedNote(`Playing on your Spotify on "${res.device.name}" (${res.device.type}).`);
+      else setStartedNote('Sent to your Spotify.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not play this song');
     } finally {
@@ -392,6 +409,25 @@ export default function OceanSongPanel({ group, myTrackId, onClose }: Props) {
 
             {followError && (
               <p className="relative mt-2 text-center text-xs text-red-300">{followError}</p>
+            )}
+
+            {startedNote && !error && (
+              <div
+                className={`relative mt-3 text-center text-xs ${startedWarn ? 'text-amber-300' : 'text-emerald-300'}`}
+              >
+                <p>{startedNote}</p>
+                {startedWarn && (
+                  <a
+                    href={trackUrl(group.trackUri)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-cyan-200 underline hover:text-cyan-100"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Open in Spotify instead
+                  </a>
+                )}
+              </div>
             )}
 
             {error && (

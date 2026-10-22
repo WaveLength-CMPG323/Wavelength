@@ -15,6 +15,9 @@ export const BORDERS: Record<string, { name: string }> = {
   'starfish-shells': { name: 'Starfish & Shells' },
   skeletons: { name: 'Skeletons' },
   'dino-eggs': { name: 'Dino Eggs' },
+  // Gifted by hand (see backend/db/hearts-border.sql) - deliberately NOT in
+  // backend/lib/challengePool.js, so it is never a weekly-challenge reward.
+  hearts: { name: 'Hearts & Stars' },
 };
 
 export type BorderShape = 'circle' | 'square';

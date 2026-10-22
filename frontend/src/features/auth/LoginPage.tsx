@@ -5,6 +5,7 @@ import { useAuth } from '../../data/AuthContext';
 import BrandLogo from '../../components/BrandLogo';
 import ThemeToggle from '../../components/ThemeToggle';
 import QuotaPopup from '../../components/QuotaPopup';
+import { ACCESS_REQUEST_URL } from '../../lib/links';
 
 // Real login screen. Rebuilt from scratch to match this project's own Ocean
 // page visual language (dark sea gradient, cyan wave bands, soft light
@@ -18,7 +19,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   access_denied: 'Spotify login was cancelled.',
   state_mismatch: 'Login could not be verified. Please try again.',
   token_exchange_failed: "Something went wrong connecting to Spotify. Please try again.",
-  quota_reached: "Spotify's quota for Wavelength has been reached, so new logins can't be accepted right now.",
+  quota_reached:
+    "Spotify wouldn't let this account in. Wavelength is in Spotify test mode, so your account may need to be added first, or Spotify's request limit may have been reached.",
 };
 
 export default function LoginPage() {
@@ -115,7 +117,10 @@ export default function LoginPage() {
 
       <QuotaPopup
         open={errorReason === 'quota_reached' && !quotaDismissed}
-        message="Spotify's user quota for Wavelength has been reached, so new logins can't be accepted right now. Please try again later - or continue as a guest to watch the ocean."
+        message="Spotify wouldn't let this account in. Wavelength is in Spotify test mode, so only people who have been added can log in. If you haven't been added yet, request access with the form below. Otherwise, Spotify's request limit may have been reached - try again later. You can also continue as a guest to watch the ocean."
+        title="Can't log in yet"
+        actionHref={ACCESS_REQUEST_URL}
+        actionLabel="Request access"
         onClose={() => setQuotaDismissed(true)}
       />
 
@@ -152,6 +157,21 @@ export default function LoginPage() {
               won't work for you. You can, however, show whatever you're currently playing as your own
               bubble in the ocean, and Premium listeners can join it. Chat works for everyone regardless
               of tier.
+            </span>
+          </p>
+          <p className="mt-2 flex items-start gap-1.5 text-left text-[11px] leading-snug text-wl-muted">
+            <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-wl-link/70" aria-hidden="true" />
+            <span>
+              Wavelength is in Spotify test mode, so you have to be added before you can log in.{' '}
+              <a
+                href={ACCESS_REQUEST_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-wl-link underline underline-offset-2 hover:text-wl-title"
+              >
+                Request access
+              </a>{' '}
+              with your name and Spotify email, or continue as a guest below.
             </span>
           </p>
 

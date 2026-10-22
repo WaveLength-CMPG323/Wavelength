@@ -45,6 +45,7 @@ UPDATE public.challenges
 SET reward_id = (
   SELECT r.reward_id FROM public.rewards r
   WHERE r.reward_id NOT IN (SELECT c.reward_id FROM public.challenges c WHERE c.reward_id IS NOT NULL)
+    AND r.reward_id <> 'border-hearts' -- a gifted border, never a challenge reward (see hearts-border.sql)
   ORDER BY random() LIMIT 1)
 WHERE is_active = TRUE AND reward_id IS NULL;
 
